@@ -39,7 +39,7 @@ use crate::{
     game_settings::{GameMode, LocalHealthMode},
 };
 use shared::des::ProxyToDes;
-use shared::world_sync::{ChunkCoord, Pixel, PixelFlags, ProxyToWorldSync};
+use shared::world_sync::{CHUNK_SIZE, ChunkCoord, Pixel, PixelFlags, ProxyToWorldSync};
 use tangled::Reliability;
 use tracing::{error, info, warn};
 mod audio;
@@ -119,6 +119,8 @@ enum FlagType {
     Stevari(String, i32, i32),
 }
 
+const MAX_PEER_DECOMPRESSED_MESSAGE_SIZE: u32 = 64 * 1024 * 1024;
+
 fn get_flags(mut flags: String) -> Option<FlagType> {
     if flags.is_empty() {
         return None;
@@ -126,39 +128,103 @@ fn get_flags(mut flags: String) -> Option<FlagType> {
     match flags.remove(0) {
         '0' => Some(FlagType::Normal(flags)),
         '1' => {
-            let c = flags
-                .split(' ')
-                .map(|a| a.to_string())
-                .collect::<Vec<String>>();
+            let Some((ent, flag)) = flags.split_once(' ') else {
+                warn!(
+                    event = "invalid_flag_message",
+                    kind = "slow",
+                    action = "drop",
+                    "Dropping malformed slow flag message"
+                );
+                return None;
+            };
             Some(FlagType::Slow(
-                c[1].clone(),
-                c[0].parse().unwrap_or_default(),
+                flag.to_string(),
+                ent.parse().unwrap_or_default(),
             ))
         }
         '2' => {
-            let c = flags
-                .split(' ')
-                .map(|a| a.to_string())
-                .collect::<Vec<String>>();
+            let c = flags.splitn(4, ' ').collect::<Vec<&str>>();
+            if c.len() != 4 {
+                warn!(
+                    event = "invalid_flag_message",
+                    kind = "moon",
+                    parts = c.len(),
+                    action = "drop",
+                    "Dropping malformed moon flag message"
+                );
+                return None;
+            }
             Some(FlagType::Moon(
-                c[3].clone(),
+                c[3].to_string(),
                 c[0].parse().unwrap_or_default(),
                 c[1].parse().unwrap_or_default(),
                 c[2] == "1",
             ))
         }
         '3' => {
-            let c = flags
-                .split(' ')
-                .map(|a| a.to_string())
-                .collect::<Vec<String>>();
+            let c = flags.splitn(3, ' ').collect::<Vec<&str>>();
+            if c.len() != 3 {
+                warn!(
+                    event = "invalid_flag_message",
+                    kind = "stevari",
+                    parts = c.len(),
+                    action = "drop",
+                    "Dropping malformed stevari flag message"
+                );
+                return None;
+            }
             Some(FlagType::Stevari(
-                c[2].clone(),
+                c[2].to_string(),
                 c[0].parse().unwrap_or_default(),
                 c[1].parse().unwrap_or_default(),
             ))
         }
         _ => None,
+    }
+}
+
+fn decompress_peer_message(
+    context: &'static str,
+    source: OmniPeerId,
+    data: &[u8],
+) -> Option<Vec<u8>> {
+    let Some(len_bytes) = data.get(..4) else {
+        warn!(
+            event = "compressed_peer_message_too_short",
+            context,
+            source = %source,
+            len = data.len(),
+            action = "drop",
+            "Dropping compressed peer message without size header"
+        );
+        return None;
+    };
+    let declared_len = u32::from_le_bytes(len_bytes.try_into().ok()?);
+    if declared_len > MAX_PEER_DECOMPRESSED_MESSAGE_SIZE {
+        warn!(
+            event = "compressed_peer_message_too_large",
+            context,
+            source = %source,
+            declared_len,
+            max = MAX_PEER_DECOMPRESSED_MESSAGE_SIZE,
+            action = "drop",
+            "Dropping oversized compressed peer message"
+        );
+        return None;
+    }
+    match lz4_flex::decompress_size_prepended(data) {
+        Ok(decompressed) => Some(decompressed),
+        Err(err) => {
+            warn!(
+                event = "compressed_peer_message_decode_failed",
+                context,
+                source = %source,
+                error = %err,
+                action = "drop",
+                "Dropping invalid compressed peer message"
+            );
+            None
+        }
     }
 }
 
@@ -726,10 +792,18 @@ impl NetManager {
                 }
             }
             omni::OmniNetworkEvent::Message { src, data } => {
-                let Some(net_msg) = lz4_flex::decompress_size_prepended(&data)
-                    .ok()
-                    .and_then(|decomp| bitcode::decode::<NetMsg>(&decomp).ok())
-                else {
+                let Some(decompressed) = decompress_peer_message("net_msg", src, &data) else {
+                    return;
+                };
+                let Ok(net_msg) = bitcode::decode::<NetMsg>(&decompressed) else {
+                    warn!(
+                        event = "peer_message_decode_failed",
+                        context = "net_msg",
+                        source = %src,
+                        len = decompressed.len(),
+                        action = "drop",
+                        "Dropping peer message with invalid bitcode payload"
+                    );
                     return;
                 };
                 self.handle_net_msg(state, player_image, src, net_msg, tx, sendm);
@@ -782,6 +856,20 @@ impl NetManager {
             }
             NetMsg::MapData(chunks) => {
                 for (ch, c) in chunks {
+                    if !c.has_valid_pixel_count() {
+                        warn!(
+                            event = "invalid_map_chunk_data",
+                            source = %src,
+                            chunk_x = ch.0,
+                            chunk_y = ch.1,
+                            runs = c.runs.len(),
+                            pixels = c.pixel_count(),
+                            expected = CHUNK_SIZE * CHUNK_SIZE,
+                            action = "drop",
+                            "Dropping invalid map chunk data"
+                        );
+                        continue;
+                    }
                     let _ = tx.send((ch, c));
                 }
             }
@@ -822,7 +910,7 @@ impl NetManager {
                 state.try_ms_write(&ws_encode_mod(src, &data));
             }
             NetMsg::ModCompressed { data } => {
-                if let Ok(decompressed) = lz4_flex::decompress_size_prepended(&data) {
+                if let Some(decompressed) = decompress_peer_message("mod_compressed", src, &data) {
                     state.try_ms_write(&ws_encode_mod(src, &decompressed));
                 }
             }
@@ -1176,6 +1264,14 @@ impl NetManager {
     ) {
         match msg {
             NoitaOutbound::Raw(raw_msg) => {
+                if raw_msg.is_empty() {
+                    warn!(
+                        event = "empty_noita_raw_message",
+                        action = "drop",
+                        "Dropping empty raw message from Noita"
+                    );
+                    return;
+                }
                 match raw_msg[0] & 0b11 {
                     // Message to proxy
                     1 => {

@@ -290,11 +290,24 @@ impl WorldSync {
         match msg {
             ProxyToWorldSync::Updates(updates) => {
                 // TODO should check that updates don't touch the same chunk
-                updates.into_iter().for_each(|chunk| unsafe {
-                    let _ = self
-                        .particle_world_state
-                        .assume_init_ref()
-                        .decode_world(chunk);
+                updates.into_iter().for_each(|chunk| {
+                    if !chunk.has_valid_pixel_count() {
+                        noita_api::print!(
+                            "event=invalid_world_update context=remote_decode chunk=({}, {}) runs={} pixels={} expected={} action=drop",
+                            chunk.coord.0,
+                            chunk.coord.1,
+                            chunk.pixel_runs.len(),
+                            chunk.pixel_count(),
+                            CHUNK_SIZE * CHUNK_SIZE
+                        );
+                        return;
+                    }
+                    unsafe {
+                        let _ = self
+                            .particle_world_state
+                            .assume_init_ref()
+                            .decode_world(chunk);
+                    }
                 });
             }
         }
