@@ -33,6 +33,14 @@ pub struct Color(pub u32);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct PhysicsBodyID(pub i32);
 
+impl PhysicsBodyID {
+    pub const INVALID: Self = Self(i32::MAX);
+
+    pub fn is_valid(self) -> bool {
+        self != Self::INVALID
+    }
+}
+
 pub trait Component: From<ComponentID> + Into<ComponentID> + Deref<Target = ComponentID> {
     const NAME_STR: &'static str;
 }
@@ -154,7 +162,11 @@ impl EntityID {
     }
 
     pub fn get_physics_body_ids(self) -> eyre::Result<Vec<PhysicsBodyID>> {
-        raw::physics_body_id_get_from_entity(self, None)
+        raw::physics_body_id_get_from_entity(self, None).map(|ids| {
+            ids.into_iter()
+                .filter(|body_id| body_id.is_valid())
+                .collect()
+        })
     }
 
     pub fn set_static(self, is_static: bool) -> eyre::Result<()> {
@@ -628,9 +640,15 @@ impl PhysicsBodyID {
         vy: f64,
         av: f64,
     ) -> eyre::Result<()> {
+        if !self.is_valid() {
+            return Ok(());
+        }
         raw::physics_body_id_set_transform(self, x, y, r, vx, vy, av)
     }
     pub fn get_transform(self) -> eyre::Result<Option<PhysData>> {
+        if !self.is_valid() {
+            return Ok(None);
+        }
         raw::physics_body_id_get_transform(self)
     }
 }

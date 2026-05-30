@@ -2585,6 +2585,7 @@ fn give_wand(
         entity_manager.add_component::<Inventory2Component>()?
     };
     let mut stop = false;
+    let mut kept_wand = None;
     if let Some(wand) = inv.m_actual_active_item()? {
         if let Some(Some(tgid)) = wand
             .get_var("ew_gid_lid")
@@ -2599,20 +2600,24 @@ fn give_wand(
                 if r.is_some() {
                     entity_manager.set_component_enabled(inv, false)?;
                 }
-                stop = true
+                stop = true;
+                kept_wand = Some(wand);
             }
         } else if wand.get_var("ew_spawned_wand").is_some() {
             if r.is_some() {
                 entity_manager.set_component_enabled(inv, false)?;
             }
-            stop = true
+            stop = true;
+            kept_wand = Some(wand);
         } else {
             if r.is_some() {
                 entity_manager.set_component_enabled(inv, true)?;
             }
             wand.kill()
         }
-        if let Some(r) = r {
+        if let Some(r) = r
+            && let Some(wand) = kept_wand
+        {
             let (x, y) = entity.get_hotspot("hand")?;
             wand.set_position(x, y, Some(r as f64))?;
         }

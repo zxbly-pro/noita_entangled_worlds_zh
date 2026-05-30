@@ -239,7 +239,13 @@ fn with_every_module(
 }
 
 fn module_on_world_init(_lua: LuaState) -> eyre::Result<()> {
-    ExtState::with_global(|state| state.globals = Globals::default())?;
+    ExtState::with_global(|state| {
+        state.globals = Globals::default();
+        state.player_entity_map.clear();
+        state.fps_by_player.clear();
+        state.dont_spawn.clear();
+        state.cam_pos.clear();
+    })?;
     with_every_module(|ctx, module| module.on_world_init(ctx))
 }
 

@@ -60,6 +60,15 @@ pub(crate) struct EntitySync {
     entity_manager: EntityManager,
 }
 impl EntitySync {
+    fn reset_state(&mut self) {
+        for (_, remote) in std::mem::take(&mut self.remote_models) {
+            let _ = remote.remove_entities(&mut self.entity_manager);
+        }
+        let log_performance = self.log_performance;
+        *self = Self::default();
+        self.log_performance = log_performance;
+    }
+
     pub(crate) fn set_perf(&mut self, perf: bool) {
         self.log_performance = perf;
     }
@@ -456,7 +465,15 @@ impl EntitySync {
                     remote.remove_entities(&mut self.entity_manager)?
                 }
             }
-            RemoteDes::Reset => self.interest_tracker.reset_interest_for(source),
+            RemoteDes::Reset => {
+                if let Some(remote) = self.remote_models.remove(&source) {
+                    let _ = remote.remove_entities(&mut self.entity_manager);
+                }
+                self.remote_index.remove(&source);
+                self.peer_order.retain(|peer| peer != &source);
+                cam_pos.remove(&source);
+                self.interest_tracker.reset_interest_for(source);
+            }
             RemoteDes::Projectiles(vec) => {
                 self.remote_models
                     .entry(source)
@@ -524,7 +541,9 @@ impl Module for EntitySync {
     }
 
     fn on_world_init(&mut self, ctx: &mut ModuleCtx) -> eyre::Result<()> {
-        send_remotedes(ctx.net, true, Destination::Broadcast, RemoteDes::Reset)?;
+        let reset_result = send_remotedes(ctx.net, true, Destination::Broadcast, RemoteDes::Reset);
+        self.reset_state();
+        reset_result?;
         Ok(())
     }
 
