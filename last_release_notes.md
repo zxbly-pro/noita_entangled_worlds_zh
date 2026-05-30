@@ -1,13 +1,10 @@
-## Noita Entangled Worlds v1.7.2
+## Noita Entangled Worlds v1.7.3
 
-- Added an optional **Share all perks** setting. When enabled, perks picked up by one player are treated as shared/global perks and are applied to the other players.
-- Added the wand showcase compare UI from the fork's master branch.
-- Improved multiplayer sync safety by validating world updates, chunk data, chunk deltas, and chunk-map data before applying or forwarding them.
-- Added oversized local-socket and peer-compressed-message guards to reject malformed payloads before they can allocate excessive memory.
-- Suppressed unchanged or empty normal chunk-delta packets while preserving authority-transition updates.
-- Fixed entity position/storage batching and `spawn_once` batching so final remainder entries are no longer skipped.
-- Added guarded stale-authority detection for incoming chunk deltas, with snapshot recovery requests from the expected authority.
-- Replaced unsafe pixel flag decoding with checked decoding and added structured logs for invalid payloads, malformed flags, stale chunk deltas, empty delta suppression, and map-worker shutdown.
+- Expanded the wand showcase UI so it can display the full inventory instead of only the active wand.
+- Fixed stale remote entity-sync cleanup on world init and peer reset, reducing the chance of runaway update loops after starting a new game.
+- Guarded invalid physics-body handles so entity sync does not repeatedly call Noita physics APIs with the invalid `2147483647` sentinel.
+- Fixed remote wand sync so it no longer tries to reposition a wand after choosing to kill and replace it.
+- Cleared additional per-world EW state on world init to avoid carrying stale player, camera, spawn, and FPS bookkeeping into a fresh run.
 
 
 ## Accepted pull requests
