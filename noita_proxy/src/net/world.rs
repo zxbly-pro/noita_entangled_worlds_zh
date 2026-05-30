@@ -7,7 +7,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::HashMap;
 use std::f32::consts::TAU;
 use std::sync::mpsc;
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::{Receiver, Sender, TryRecvError};
 use std::time::Duration;
 use std::{cmp, mem, thread};
 use tracing::{debug, info, warn};
@@ -225,20 +225,45 @@ impl WorldManager {
         thread::spawn(move || {
             let mut mats = Default::default();
             let mut chunks = Vec::new();
+            let mut mats_open = true;
+            let mut chunks_open = true;
             loop {
-                while let Ok(mat) = rxm.try_recv() {
-                    mats = mat;
-                }
-                while let Ok((c, data)) = recv.try_recv() {
-                    if is_host {
-                        let _ = tsx.send((c, data.clone()));
+                loop {
+                    match rxm.try_recv() {
+                        Ok(mat) => mats = mat,
+                        Err(TryRecvError::Empty) => break,
+                        Err(TryRecvError::Disconnected) => {
+                            mats_open = false;
+                            break;
+                        }
                     }
-                    chunks.push((c, data));
+                }
+                loop {
+                    match recv.try_recv() {
+                        Ok((c, data)) => {
+                            if is_host {
+                                let _ = tsx.send((c, data.clone()));
+                            }
+                            chunks.push((c, data));
+                        }
+                        Err(TryRecvError::Empty) => break,
+                        Err(TryRecvError::Disconnected) => {
+                            chunks_open = false;
+                            break;
+                        }
+                    }
                 }
                 if !mats.is_empty() {
                     for (c, data) in chunks.drain(..) {
                         let _ = send.send((c, create_image(data, &mats)));
                     }
+                }
+                if !mats_open && !chunks_open && chunks.is_empty() {
+                    info!(
+                        event = "world_map_worker_stopped",
+                        "World map image worker stopped"
+                    );
+                    break;
                 }
                 thread::sleep(Duration::from_millis(16));
             }
@@ -669,6 +694,113 @@ impl WorldManager {
         );
     }
 
+    fn validate_chunk_data(
+        context: &'static str,
+        source: OmniPeerId,
+        chunk: ChunkCoord,
+        chunk_data: &ChunkData,
+    ) -> bool {
+        let pixels = chunk_data.pixel_count();
+        let valid = chunk_data.has_valid_pixel_count();
+        if !valid {
+            warn!(
+                event = "invalid_chunk_data",
+                context,
+                source = %source,
+                chunk_x = chunk.0,
+                chunk_y = chunk.1,
+                runs = chunk_data.runs.len(),
+                pixels,
+                expected = CHUNK_SIZE * CHUNK_SIZE,
+                action = "drop",
+                "Dropping invalid chunk data"
+            );
+        }
+        valid
+    }
+
+    fn validate_chunk_delta(context: &'static str, source: OmniPeerId, delta: &ChunkDelta) -> bool {
+        let pixels = delta.pixel_count();
+        let valid = delta.has_valid_pixel_count();
+        if !valid {
+            warn!(
+                event = "invalid_chunk_delta",
+                context,
+                source = %source,
+                chunk_x = delta.chunk_coord.0,
+                chunk_y = delta.chunk_coord.1,
+                runs = delta.run_count(),
+                pixels,
+                expected = CHUNK_SIZE * CHUNK_SIZE,
+                action = "drop",
+                "Dropping invalid chunk delta"
+            );
+        }
+        valid
+    }
+
+    fn validate_noita_world_update(
+        context: &'static str,
+        source: OmniPeerId,
+        update: &NoitaWorldUpdate,
+    ) -> bool {
+        let pixels = update.pixel_count();
+        let valid = update.has_valid_pixel_count();
+        if !valid {
+            warn!(
+                event = "invalid_world_update",
+                context,
+                source = %source,
+                chunk_x = update.coord.0,
+                chunk_y = update.coord.1,
+                runs = update.pixel_runs.len(),
+                pixels,
+                expected = CHUNK_SIZE * CHUNK_SIZE,
+                action = "drop",
+                "Dropping invalid world update"
+            );
+        }
+        valid
+    }
+
+    fn recover_stale_chunk_delta(
+        &mut self,
+        context: &'static str,
+        source: OmniPeerId,
+        expected: OmniPeerId,
+        chunk: ChunkCoord,
+        priority: u8,
+    ) {
+        warn!(
+            event = "stale_chunk_delta",
+            context,
+            source = %source,
+            expected = %expected,
+            chunk_x = chunk.0,
+            chunk_y = chunk.1,
+            priority,
+            world_num = self.world_num,
+            action = "request_snapshot",
+            "Dropping stale chunk delta and requesting a fresh snapshot"
+        );
+        self.emit_msg(
+            Destination::Peer(source),
+            WorldNetMessage::ListenStopRequest { chunk },
+        );
+        self.emit_msg(
+            Destination::Peer(expected),
+            WorldNetMessage::ListenRequest { chunk },
+        );
+    }
+
+    fn expected_delta_authority(&self, chunk: ChunkCoord) -> Option<OmniPeerId> {
+        match self.chunk_state.get(&chunk) {
+            Some(ChunkState::Listening { authority, .. })
+            | Some(ChunkState::WantToGetAuth { authority, .. }) => Some(*authority),
+            _ => None,
+        }
+    }
+
     pub(crate) fn handle_msg(&mut self, source: OmniPeerId, msg: WorldNetMessage) {
         match msg {
             WorldNetMessage::RequestAuthority {
@@ -781,6 +913,9 @@ impl WorldManager {
                     .insert(chunk, ChunkState::authority(priority));
                 self.last_request_priority.remove(&chunk);
                 if let Some(chunk_data) = chunk_data {
+                    if !Self::validate_chunk_data("got_authority", source, chunk, &chunk_data) {
+                        return;
+                    }
                     self.inbound_model.apply_chunk_data(chunk, &chunk_data);
                     self.outbound_model.apply_chunk_data(chunk, &chunk_data);
                 } else if let Some(chunk_data) = self.outbound_model.get_chunk_data(chunk) {
@@ -806,6 +941,9 @@ impl WorldManager {
                     return;
                 }
                 if world_num != self.world_num {
+                    return;
+                }
+                if !Self::validate_chunk_data("update_storage", source, chunk, &chunk_data) {
                     return;
                 }
                 let _ = self.tx.send((chunk, chunk_data.clone()));
@@ -837,6 +975,14 @@ impl WorldManager {
                 }
                 self.authority_map.remove(&chunk);
                 if let Some(chunk_data) = chunk_data {
+                    if !Self::validate_chunk_data(
+                        "relinquish_authority",
+                        source,
+                        chunk,
+                        &chunk_data,
+                    ) {
+                        return;
+                    }
                     let _ = self.tx.send((chunk, chunk_data.clone()));
                     self.chunk_storage.insert(chunk, chunk_data);
                     self.emit_msg(
@@ -904,6 +1050,14 @@ impl WorldManager {
                     },
                 );
                 if let Some(chunk_data) = chunk_data {
+                    if !Self::validate_chunk_data(
+                        "listen_initial_response",
+                        source,
+                        chunk,
+                        &chunk_data,
+                    ) {
+                        return;
+                    }
                     self.inbound_model.apply_chunk_data(chunk, &chunk_data);
                 } else {
                     warn!(
@@ -916,6 +1070,21 @@ impl WorldManager {
                 priority,
                 take_auth,
             } => {
+                if !Self::validate_chunk_delta("listen_update", source, &delta) {
+                    return;
+                }
+                if let Some(expected) = self.expected_delta_authority(delta.chunk_coord)
+                    && expected != source
+                {
+                    self.recover_stale_chunk_delta(
+                        "listen_update",
+                        source,
+                        expected,
+                        delta.chunk_coord,
+                        priority,
+                    );
+                    return;
+                }
                 match self.chunk_state.get_mut(&delta.chunk_coord) {
                     Some(ChunkState::Listening { priority: pri, .. }) => {
                         *pri = priority;
@@ -971,6 +1140,21 @@ impl WorldManager {
             }
             WorldNetMessage::ChunkPacket { chunkpacket } => {
                 for (delta, priority) in chunkpacket {
+                    if !Self::validate_chunk_delta("chunk_packet", source, &delta) {
+                        continue;
+                    }
+                    if let Some(expected) = self.expected_delta_authority(delta.chunk_coord)
+                        && expected != source
+                    {
+                        self.recover_stale_chunk_delta(
+                            "chunk_packet",
+                            source,
+                            expected,
+                            delta.chunk_coord,
+                            priority,
+                        );
+                        continue;
+                    }
                     match self.chunk_state.get_mut(&delta.chunk_coord) {
                         Some(ChunkState::Listening { priority: pri, .. }) => {
                             *pri = priority;
@@ -1058,6 +1242,9 @@ impl WorldManager {
             } => {
                 debug!("Transfer ok");
                 if let Some(chunk_data) = chunk_data {
+                    if !Self::validate_chunk_data("transfer_ok", source, chunk, &chunk_data) {
+                        return;
+                    }
                     self.inbound_model.apply_chunk_data(chunk, &chunk_data);
                     self.outbound_model.apply_chunk_data(chunk, &chunk_data);
                 }
@@ -3329,10 +3516,13 @@ fn test_cut_perf() {
 }
 
 impl WorldManager {
-    pub fn handle_noita_msg(&mut self, _: OmniPeerId, msg: WorldSyncToProxy) {
+    pub fn handle_noita_msg(&mut self, source: OmniPeerId, msg: WorldSyncToProxy) {
         match msg {
             WorldSyncToProxy::Updates(updates) => {
                 for update in updates {
+                    if !Self::validate_noita_world_update("local_world_update", source, &update) {
+                        continue;
+                    }
                     self.outbound_model
                         .apply_noita_update(update, &mut self.is_storage_recent)
                 }
@@ -3346,9 +3536,35 @@ impl WorldManager {
                     // who sending may be better to be after the let some
                     // but im too lazy to figure out for sure
                     let who_sending = self.chunk_updated_locally(chunk, priority);
+                    if !self.outbound_model.chunk_has_changes(chunk) {
+                        if !who_sending.is_empty() {
+                            debug!(
+                                event = "empty_delta_suppressed",
+                                chunk_x = chunk.0,
+                                chunk_y = chunk.1,
+                                listeners = who_sending.len(),
+                                priority,
+                                "Skipping unchanged chunk delta"
+                            );
+                        }
+                        continue;
+                    }
                     let Some(delta) = self.outbound_model.get_chunk_delta(chunk, false) else {
                         continue;
                     };
+                    if delta.is_empty() {
+                        if !who_sending.is_empty() {
+                            debug!(
+                                event = "empty_delta_suppressed",
+                                chunk_x = chunk.0,
+                                chunk_y = chunk.1,
+                                listeners = who_sending.len(),
+                                priority,
+                                "Skipping empty chunk delta"
+                            );
+                        }
+                        continue;
+                    }
                     for (peer, pri) in who_sending {
                         chunk_packet
                             .entry(peer)

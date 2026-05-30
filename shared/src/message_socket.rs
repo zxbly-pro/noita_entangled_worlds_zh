@@ -9,13 +9,24 @@ use std::{
 
 use bitcode::{DecodeOwned, Encode};
 use eyre::{Context, bail};
-use tracing::info;
+use tracing::{info, warn};
+
+const MAX_MESSAGE_SIZE: u32 = 64 * 1024 * 1024;
 
 fn read_one<T: DecodeOwned>(mut buf: impl Read) -> eyre::Result<T> {
     let mut len_buf = [0u8; 4];
     buf.read_exact(&mut len_buf)
         .wrap_err("Couldn't receive the length from stream")?;
     let len = u32::from_le_bytes(len_buf);
+    if len > MAX_MESSAGE_SIZE {
+        warn!(
+            event = "message_socket_frame_too_large",
+            len,
+            max = MAX_MESSAGE_SIZE,
+            "Rejecting oversized local socket frame"
+        );
+        bail!("Local socket message too large: {len} bytes (max {MAX_MESSAGE_SIZE})");
+    }
     let mut out_buf = vec![0; usize::try_from(len)?];
     buf.read_exact(out_buf.as_mut_slice())
         .wrap_err("Couldn't read message body")?;

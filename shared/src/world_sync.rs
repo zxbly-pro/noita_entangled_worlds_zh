@@ -81,6 +81,12 @@ impl NoitaWorldUpdate {
             .iter()
             .flat_map(|run| std::iter::repeat_n(run.data, run.length as usize))
     }
+    pub fn pixel_count(&self) -> usize {
+        self.pixel_runs.iter().map(|run| run.length as usize).sum()
+    }
+    pub fn has_valid_pixel_count(&self) -> bool {
+        self.pixel_count() == CHUNK_SIZE * CHUNK_SIZE
+    }
     pub fn is_all_empty_pixels(&self) -> bool {
         self.pixel_runs.iter().all(|pix| pix.data.is_air())
     }
@@ -95,6 +101,16 @@ pub enum PixelFlags {
     #[default]
     Unknown = 15,
     //may have at most * = 15
+}
+impl PixelFlags {
+    #[inline(always)]
+    pub const fn from_nibble(value: u8) -> Self {
+        match value {
+            0 => PixelFlags::Normal,
+            1 => PixelFlags::Abnormal,
+            _ => PixelFlags::Unknown,
+        }
+    }
 }
 
 /// An entire pixel packed into 12 bits.
@@ -131,7 +147,7 @@ impl Pixel {
     }
     #[inline(always)]
     pub fn flags(self) -> PixelFlags {
-        unsafe { std::mem::transmute((self.0 >> 12) as u8) }
+        PixelFlags::from_nibble((self.0 >> 12) as u8)
     }
     #[inline(always)]
     pub fn is_air(&self) -> bool {

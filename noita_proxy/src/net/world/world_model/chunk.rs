@@ -80,6 +80,10 @@ impl Chunk {
         self.changed.get(offset)
     }
 
+    pub fn any_changed(&self) -> bool {
+        self.any_changed
+    }
+
     pub fn mark_changed(&mut self, offset: usize) {
         self.changed.set(offset);
         self.any_changed = true;

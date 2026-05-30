@@ -70,6 +70,12 @@ impl ChunkData {
             }
         }
     }
+    pub(crate) fn pixel_count(&self) -> usize {
+        self.runs.iter().map(|run| run.length as usize).sum()
+    }
+    pub(crate) fn has_valid_pixel_count(&self) -> bool {
+        self.pixel_count() == CHUNK_SIZE * CHUNK_SIZE
+    }
     pub(crate) fn apply_delta(&mut self, delta: ChunkData) {
         let nil = Pixel::NIL;
         let mut chunk = Chunk::default();
@@ -86,6 +92,21 @@ impl ChunkData {
             }
         }
         *self = chunk.to_chunk_data()
+    }
+}
+
+impl ChunkDelta {
+    pub(crate) fn run_count(&self) -> usize {
+        self.runs.len()
+    }
+    pub(crate) fn pixel_count(&self) -> usize {
+        self.runs.iter().map(|run| run.length as usize).sum()
+    }
+    pub(crate) fn has_valid_pixel_count(&self) -> bool {
+        self.pixel_count() == CHUNK_SIZE * CHUNK_SIZE
+    }
+    pub(crate) fn is_empty(&self) -> bool {
+        self.runs.iter().all(|run| run.data.is_none())
     }
 }
 
@@ -179,6 +200,12 @@ impl WorldModel {
         }
         let runs = runner.build().into();
         Some(ChunkDelta { chunk_coord, runs })
+    }
+
+    pub(crate) fn chunk_has_changes(&self, chunk_coord: ChunkCoord) -> bool {
+        self.chunks
+            .get(&chunk_coord)
+            .is_some_and(|chunk| chunk.any_changed())
     }
 
     pub fn reset_change_tracking(&mut self) {

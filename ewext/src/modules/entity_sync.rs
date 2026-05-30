@@ -185,7 +185,7 @@ impl EntitySync {
     ) -> eyre::Result<()> {
         let len = self.spawn_once.len();
         if len > 0 {
-            let batch_size = (len / 20).max(1);
+            let batch_size = len.div_ceil(20).max(1);
             let start_index = (frame_num % 20) * batch_size;
             let end_index = (start_index + batch_size).min(len);
             let mut i = end_index;
