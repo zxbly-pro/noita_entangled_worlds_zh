@@ -160,7 +160,7 @@ local function build_settings()
                 {
                     id = "rebind_wand_showcase",
                     ui_name = "wand inspect button",
-                    ui_description = "hold near another player to compare held wands",
+                    ui_description = "hold near another player to inspect their inventory and compare wands",
                     value_default = "226",
                     ui_fn = ui_get_input,
                     is_waiting_for_input = false,

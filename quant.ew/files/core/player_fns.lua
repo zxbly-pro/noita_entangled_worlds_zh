@@ -562,7 +562,7 @@ function player_fns.replace_player_entity(new_entity, player_data)
         player_fns.spawn_player_for(player_data.peer_id, 0, 0, player_data)
         local latest_inventory = player_data.latest_inventory
         if latest_inventory ~= nil then
-            player_fns.deserialize_items(latest_inventory, player_data, false)
+            player_fns.deserialize_items(latest_inventory, player_data, player_data.latest_inventory_has_spells == true)
         end
     end
     ewext.register_player_entity(player_data.peer_id, player_data.entity)
@@ -582,7 +582,7 @@ function player_fns.respawn_if_necessary()
             local latest_inventory = player_data.latest_inventory
             if latest_inventory ~= nil then
                 print("Recovering inventory")
-                player_fns.deserialize_items(latest_inventory, player_data, false)
+                player_fns.deserialize_items(latest_inventory, player_data, player_data.latest_inventory_has_spells == true)
             end
         end
     end
