@@ -1,14 +1,19 @@
-## Noita Entangled Worlds v1.7.0
+## Noita Entangled Worlds v1.7.2
 
-- Added an optional **Share all perks** setting.
-- When enabled, any perk picked up by one player is treated as a shared/global perk and is automatically applied to the other players.
-- Forked builds now use the fork/tag they were built from when downloading mod releases, so custom release builds can install their matching `quant.ew.zip` instead of looking only at the official upstream repository.
+- Added an optional **Share all perks** setting. When enabled, perks picked up by one player are treated as shared/global perks and are applied to the other players.
+- Added the wand showcase compare UI from the fork's master branch.
+- Improved multiplayer sync safety by validating world updates, chunk data, chunk deltas, and chunk-map data before applying or forwarding them.
+- Added oversized local-socket and peer-compressed-message guards to reject malformed payloads before they can allocate excessive memory.
+- Suppressed unchanged or empty normal chunk-delta packets while preserving authority-transition updates.
+- Fixed entity position/storage batching and `spawn_once` batching so final remainder entries are no longer skipped.
+- Added guarded stale-authority detection for incoming chunk deltas, with snapshot recovery requests from the expected authority.
+- Replaced unsafe pixel flag decoding with checked decoding and added structured logs for invalid payloads, malformed flags, stale chunk deltas, empty delta suppression, and map-worker shutdown.
 
 
 ## Accepted pull requests
 
 
-No pull requests have been accepted in this release.
+No upstream pull requests have been accepted in this fork release.
 
 ## Installation
 
