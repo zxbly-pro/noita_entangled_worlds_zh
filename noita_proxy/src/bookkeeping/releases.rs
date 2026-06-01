@@ -192,7 +192,7 @@ impl From<Version> for Tag {
 }
 
 fn release_repository() -> &'static str {
-    option_env!("EW_RELEASE_REPOSITORY").unwrap_or("IntQuant/noita_entangled_worlds")
+    option_env!("EW_RELEASE_REPOSITORY").unwrap_or("zxbly-pro/noita_entangled_worlds_zh")
 }
 
 fn release_tag_override() -> Option<Tag> {

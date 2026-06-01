@@ -5468,8 +5468,8 @@ dependencies = [
 
 [[package]]
 name = "tangled"
-version = "0.5.0"
-source = "git+https://github.com/IntQuant/tangled#2a1e453593f43e3eda09f507e3274b463320ab45"
+version = "0.6.0"
+source = "git+https://github.com/zxbly-pro/tangled#030a18dd538b416a46f0b67c2ecc0cf3d87d2aa0"
 dependencies = [
  "bitcode",
  "crossbeam",
