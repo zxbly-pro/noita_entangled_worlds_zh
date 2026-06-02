@@ -140,5 +140,7 @@ jobs:
       - uses: ncipollo/release-action@v1
         with:
           #draft: true
+          allowUpdates: true
           artifacts: "*.zip"
           bodyFile: last_release_notes.md
+          replacesArtifacts: true
