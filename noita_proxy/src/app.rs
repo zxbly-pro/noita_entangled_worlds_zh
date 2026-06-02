@@ -331,7 +331,7 @@ impl App {
     }
 
     fn nickname(&self) -> String {
-        let default = "no name found".to_string();
+        let default = "未找到名称".to_string();
         let steam_nickname = if let Ok(steam) = &self.steam_state {
             let sid = steam.get_my_id();
             Some(steam.get_user_name(sid))
@@ -554,19 +554,19 @@ impl App {
                         ui.set_min_size(ui.available_size());
                         ScrollArea::both().auto_shrink(false).show(ui, |ui| {
                             self.show_local_settings(ui);
-                            if ui.button("Show host settings").clicked() {
+                            if ui.button("显示主机设置").clicked() {
                                 self.show_host_settings = !self.show_host_settings
                             }
                             if self.show_host_settings {
                                 self.app_saved_state.game_settings.show_editor(ui, true)
                             }
-                            if ui.button("Show audio settings").clicked() {
+                            if ui.button("显示音频设置").clicked() {
                                 self.show_audio_settings = !self.show_audio_settings
                             }
                             if self.show_audio_settings {
                                 self.audio.show_ui(ui, true);
                             }
-                            if self.running_on_steamdeck && ui.button("Close Proxy").clicked() {
+                            if self.running_on_steamdeck && ui.button("关闭代理").clicked() {
                                 exit(0)
                             }
                         });
@@ -657,12 +657,9 @@ impl App {
                                                 } else {
                                                     Color32::RED
                                                 };
-                                                ui.colored_label(color, format!("EW {version}"));
+                                                ui.colored_label(color, format!("纠缠世界 {version}"));
                                             } else if info.is_noita_online {
-                                                ui.colored_label(
-                                                    Color32::LIGHT_BLUE,
-                                                    "Noita Online",
-                                                );
+                                                ui.colored_label(Color32::LIGHT_BLUE, "Noita Online 房间");
                                             } else {
                                                 ui.label(tr("Not-Entangled-Worlds-lobby"));
                                             }
@@ -684,7 +681,7 @@ impl App {
                                 }
                             }
                             steam_helper::MaybeLobbyList::Errored => {
-                                ui.label("Failed to request lobby list");
+                                ui.label("请求大厅列表失败");
                             }
                         }
                     });
@@ -718,7 +715,7 @@ impl App {
             ui.open_url(OpenUrl::new_tab("https://discord.gg/uAK7utvVWN"));
         }
         let secret_active = ui.input(|i| i.modifiers.ctrl && i.key_down(Key::D));
-        if secret_active && ui.button("reset all data").clicked() {
+        if secret_active && ui.button("重置全部数据").clicked() {
             self.app_saved_state = Default::default();
             self.paths = Default::default();
             self.state = AppState::LangPick;
@@ -738,7 +735,7 @@ impl App {
                     &mut self.app_saved_state.public_lobby,
                     tr("Make-lobby-public"),
                 );
-                ui.checkbox(&mut self.app_saved_state.allow_friends, "Allow friends");
+                ui.checkbox(&mut self.app_saved_state.allow_friends, "允许好友加入");
                 if ui.button(tr("connect_steam_connect")).clicked() {
                     let id = self.clipboard.as_mut().and_then(|c| c.get_text().ok());
                     match id {
@@ -747,9 +744,9 @@ impl App {
                             self.connect_to_steam_lobby(id);
                         }
                         None => self.notify_error(if self.clipboard.is_none() {
-                            "no clipboard"
+                            "没有可用的剪贴板"
                         } else {
-                            "clipboard failed"
+                            "读取剪贴板失败"
                         }),
                     }
                 }
@@ -768,7 +765,7 @@ impl App {
                 }
             }
             Err(err) => {
-                ui.label(format!("Could not init steam networking: {err}"));
+                ui.label(format!("无法初始化 Steam 网络连接：{err}"));
             }
         }
     }
@@ -807,12 +804,12 @@ impl App {
                 if let Ok(steam) = &self.steam_state {
                     steam.get_user_name(steam.get_my_id())
                 } else {
-                    "NO NICKNAME CHOSEN".to_string()
+                    "未设置昵称".to_string()
                 },
             );
             if ui
                 .horizontal(|ui| {
-                    ui.label("nickname");
+                    ui.label("昵称");
                     ui.text_edit_singleline(&mut temp)
                 })
                 .inner
@@ -865,8 +862,9 @@ impl App {
             Err(LobbyError::NotALobbyCode) => {
                 self.notify_error(tr("connect_steam_connect_invalid_lobby_id"))
             }
-            Err(LobbyError::CodeVersionMismatch) => self
-                .notify_error("Lobby code was created by a newer version of proxy. Please update"),
+            Err(LobbyError::CodeVersionMismatch) => {
+                self.notify_error("大厅代码由更新版本的代理创建，请先更新当前代理")
+            }
         }
     }
 
@@ -983,44 +981,44 @@ impl App {
         egui::CentralPanel::default().show_inside(ui, |ui| {
             ui.horizontal(|ui| {
                 let last = self.connected_menu;
-                ui.selectable_value(&mut self.connected_menu, ConnectedMenu::Normal, "Lobby");
+                ui.selectable_value(&mut self.connected_menu, ConnectedMenu::Normal, "大厅");
                 ui.selectable_value(
                     &mut self.connected_menu,
                     ConnectedMenu::Settings,
-                    "Game Settings",
+                    "游戏设置",
                 );
                 ui.selectable_value(
                     &mut self.connected_menu,
                     ConnectedMenu::VoIP,
-                    "VoIP Settings",
+                    "语音设置",
                 );
-                ui.selectable_value(&mut self.connected_menu, ConnectedMenu::Map, "Chunk Map");
+                ui.selectable_value(&mut self.connected_menu, ConnectedMenu::Map, "区块地图");
                 ui.selectable_value(
                     &mut self.connected_menu,
                     ConnectedMenu::NoitaLog,
-                    "Noita Log",
+                    "Noita 日志",
                 );
                 ui.selectable_value(
                     &mut self.connected_menu,
                     ConnectedMenu::ProxyLog,
-                    "Proxy Log",
+                    "代理日志",
                 );
                 if netman.peer.is_steam() {
                     ui.selectable_value(
                         &mut self.connected_menu,
                         ConnectedMenu::ConnectionInfo,
-                        "Connection Info",
+                        "连接信息",
                     );
                 }
                 if !netman.ban_list.lock().unwrap().is_empty() {
                     ui.selectable_value(
                         &mut self.connected_menu,
                         ConnectedMenu::BanList,
-                        "Ban List",
+                        "封禁列表",
                     );
                 }
                 if !netman.active_mods.lock().unwrap().is_empty() {
-                    ui.selectable_value(&mut self.connected_menu, ConnectedMenu::Mods, "Mod List");
+                    ui.selectable_value(&mut self.connected_menu, ConnectedMenu::Mods, "模组列表");
                 }
                 if last == ConnectedMenu::Settings && last != self.connected_menu {
                     let new_settings = self.app_saved_state.game_settings.clone();
@@ -1035,15 +1033,15 @@ impl App {
                         .store(old_settings != new_settings, Ordering::Relaxed)
                 }
                 ui.add_space(ui.available_width() - 56.0);
-                if ui.button("Back out").clicked() {
+                if ui.button("返回上一级").clicked() {
                     goto_menu = true
                 }
             });
             ui.separator();
             if stopped {
-                ui.colored_label(Color32::LIGHT_RED, "Netmanager thread has stopped");
+                ui.colored_label(Color32::LIGHT_RED, "网络管理线程已停止");
                 if let Some(err) = netman.error.lock().unwrap().as_ref() {
-                    ui.label("With the following error:");
+                    ui.label("错误如下：");
                     ui.label(err.to_string());
                 }
                 ui.separator();
@@ -1075,7 +1073,7 @@ impl App {
                                 self.copied_lobby = true;
                             }
                         } else {
-                            ui.label("No lobby created yet");
+                            ui.label("尚未创建大厅");
                         }
                     }
                     self.appearance.mina_color_picker(
@@ -1085,14 +1083,14 @@ impl App {
                     );
                     ui.add_space(15.0);
                     ui.horizontal(|ui| {
-                        if ui.button("save colors").clicked() {
+                        if ui.button("保存颜色").clicked() {
                             let desc = self
                                 .appearance
                                 .create_png_desc(self.paths.noita_save.clone());
                             netman.new_desc(desc, self.player_image.clone());
                             *netman.new_desc.lock().unwrap() = Some(desc);
                         };
-                        ui.label("requires noita restart")
+                        ui.label("需要重启 Noita")
                     });
                     ui.add_space(15.0);
                     if accept_local && !local_connected {
@@ -1127,7 +1125,7 @@ impl App {
                         {
                             let mut temp = netman.no_more_players.load(Ordering::Relaxed);
                             if ui
-                                .checkbox(&mut temp, "don't let more players join")
+                                .checkbox(&mut temp, "禁止更多玩家加入")
                                 .changed()
                             {
                                 netman.no_more_players.store(temp, Ordering::Relaxed);
@@ -1136,7 +1134,7 @@ impl App {
                         {
                             let mut temp = netman.no_chunkmap_to_players.load(Ordering::Relaxed);
                             if ui
-                                .checkbox(&mut temp, "don't send chunk map to players")
+                                .checkbox(&mut temp, "不向玩家发送区块地图")
                                 .changed()
                             {
                                 netman.no_chunkmap_to_players.store(temp, Ordering::Relaxed);
@@ -1144,7 +1142,7 @@ impl App {
                         }
                         {
                             let mut temp = netman.no_chunkmap.load(Ordering::Relaxed);
-                            if ui.checkbox(&mut temp, "don't save chunk map, chunkmap is disabled by default do to current implementation ram/vram leaking on long runs").changed() {
+                            if ui.checkbox(&mut temp, "不保存区块地图。由于当前实现会在长局中泄漏内存和显存，区块地图默认禁用").changed() {
                                 netman.no_chunkmap.store(temp, Ordering::Relaxed);
                             }
                         }
@@ -1165,7 +1163,7 @@ impl App {
                     let mut i = ban_list.len();
                     while i != 0 {
                         i -= 1;
-                        if ui.button(format!("unban {}", ban_list[i])).clicked() {
+                        if ui.button(format!("解除封禁 {}", ban_list[i])).clicked() {
                             ban_list.remove(i);
                         }
                     }
@@ -1184,7 +1182,7 @@ impl App {
                 }
                 ConnectedMenu::ConnectionInfo => match &netman.peer {
                     PeerVariant::Tangled(_) => {
-                        ui.label("No connection info available in tangled mode");
+                        ui.label("tangled 模式下没有可用的连接信息");
                     }
                     PeerVariant::Steam(peer) => {
                         let steam = self.steam_state.as_ref().unwrap();
@@ -1202,7 +1200,7 @@ impl App {
                     for peer in netman.peer.iter_peer_ids() {
                         if netman.peer.my_id() != peer {
                             ui.label(format!(
-                                "volume for {}",
+                                "{} 的音量",
                                 netman
                                     .nicknames
                                     .lock()
@@ -1234,7 +1232,7 @@ impl App {
                                 ui.add(Slider::new(&mut self.noitalog_number, 0..=l - 1));
                             }
                             if let Some(clipboard) = self.clipboard.as_mut()
-                                && ui.button("save to clipboard").clicked() {
+                                && ui.button("保存到剪贴板").clicked() {
                                     let _ = clipboard.set_text(&s);
                                 }
                         });
@@ -1424,7 +1422,7 @@ impl eframe::App for App {
                 let mut button_restart = false;
                 egui::CentralPanel::default().show_inside(ui, |ui| {
                     ui.label(format!(
-                        "Mismathing modes: Host is in {:?} mode, you're in {:?} mode",
+                        "模式不匹配：主机当前为 {:?} 模式，而你当前为 {:?} 模式",
                         target_lobby.kind, self.my_lobby_kind
                     ));
                     button_restart = ui
@@ -1438,7 +1436,7 @@ impl eframe::App for App {
                             .connect_to(*target_lobby)
                             .restart()
                     });
-                    self.notify_error(format!("Failed to self-restart: {err}"));
+                    self.notify_error(format!("自重启失败：{err}"));
                 }
                 if button_back {
                     self.state = AppState::Connect;
@@ -1478,7 +1476,7 @@ impl EndRunButton {
                 netman.end_run.store(true, Ordering::Relaxed);
             };
             if dirty {
-                ui.label("PENDING SETTINGS NOT SET UNTIL RUN ENDS");
+                ui.label("待生效设置将在本局结束后应用");
             }
         });
     }
@@ -1548,14 +1546,14 @@ fn show_player_list(ui: &mut Ui, netman: &mut NetManStopOnDrop) {
                                 ui.add_space(5.0);
                             }
                             if netman.peer.is_host() {
-                                if ui.button("Kick").clicked() {
+                                if ui.button("踢出").clicked() {
                                     netman.kick_list.lock().unwrap().push(peer)
                                 }
-                                if ui.button("Ban").clicked() {
+                                if ui.button("封禁").clicked() {
                                     netman.ban_list.lock().unwrap().push(peer)
                                 }
                             }
-                            if ui.button("Mods").clicked() {
+                            if ui.button("模组").clicked() {
                                 netman.send(peer, &NetMsg::RequestMods, Reliability::Reliable);
                             }
                         });
@@ -1582,14 +1580,14 @@ fn display_with_labels(
                 if netman.peer.my_id() != peer {
                     ui.horizontal(|ui| {
                         if netman.peer.is_host() {
-                            if ui.button("Kick").clicked() {
+                            if ui.button("踢出").clicked() {
                                 netman.kick_list.lock().unwrap().push(peer)
                             }
-                            if ui.button("Ban").clicked() {
+                            if ui.button("封禁").clicked() {
                                 netman.ban_list.lock().unwrap().push(peer)
                             }
                         }
-                        if ui.button("Mods").clicked() {
+                        if ui.button("模组").clicked() {
                             netman.send(peer, &NetMsg::RequestMods, Reliability::Reliable);
                         }
                     });
@@ -1605,22 +1603,22 @@ fn add_per_status_ui(
     steam: &steam_helper::SteamState,
     ui: &mut Ui,
 ) {
-    ui.label("Name");
-    ui.label("Status");
-    ui.label("Ping");
-    ui.label("LocQ❓")
-        .on_hover_text("Local Connection Quality (percentage of packets we delivered).");
-    ui.label("RemQ❓")
-        .on_hover_text("Remote Connection Quality (percentage of packets delivered to us).");
-    ui.label("In");
-    ui.label("Out");
-    ui.label("MaxSendRate");
-    ui.label("PenUnr❓")
-        .on_hover_text("Pending unreliable messages");
-    ui.label("PenRel❓")
-        .on_hover_text("Pending reliable messages");
-    ui.label("UnAck❓").on_hover_text(
-        "Amount of reliable packages that were sent but weren't confirmed as received yet.",
+    ui.label("名称");
+    ui.label("状态");
+    ui.label("延迟");
+    ui.label("本地质量")
+        .on_hover_text("本地连接质量，也就是我们成功送达的数据包百分比。");
+    ui.label("远端质量")
+        .on_hover_text("远端连接质量，也就是对方成功送达给我们的数据包百分比。");
+    ui.label("入站");
+    ui.label("出站");
+    ui.label("最大发送速率");
+    ui.label("待发不可靠")
+        .on_hover_text("等待发送的不可靠消息数量");
+    ui.label("待发可靠")
+        .on_hover_text("等待发送的可靠消息数量");
+    ui.label("未确认").on_hover_text(
+        "已经发送但尚未收到确认的可靠数据包数量。",
     );
     ui.end_row();
 
@@ -1629,8 +1627,8 @@ fn add_per_status_ui(
         ui.label(&name);
         match status {
             steam_networking::PerPeerStatus::Connected { realtimeinfo } => {
-                ui.label("Ok❓").on_hover_text("Connected");
-                ui.label(format!("{}ms", realtimeinfo.ping()));
+                ui.label("正常").on_hover_text("已连接");
+                ui.label(format!("{} 毫秒", realtimeinfo.ping()));
                 ui.label(format!(
                     "{:.2}%",
                     realtimeinfo.connection_quality_local() * 100.0
@@ -1639,23 +1637,23 @@ fn add_per_status_ui(
                     "{:.2}%",
                     realtimeinfo.connection_quality_remote() * 100.0
                 ));
-                ui.label(format!("{}by/s", realtimeinfo.in_bytes_per_sec()));
-                ui.label(format!("{}by/s", realtimeinfo.out_bytes_per_sec()));
-                ui.label(format!("{}by/s", realtimeinfo.send_rate_bytes_per_sec()));
+                ui.label(format!("{} 字节/秒", realtimeinfo.in_bytes_per_sec()));
+                ui.label(format!("{} 字节/秒", realtimeinfo.out_bytes_per_sec()));
+                ui.label(format!("{} 字节/秒", realtimeinfo.send_rate_bytes_per_sec()));
                 ui.label(format!("{}", realtimeinfo.pending_unreliable()));
                 ui.label(format!("{}", realtimeinfo.pending_reliable()));
                 ui.label(format!("{}", realtimeinfo.sent_unacked_reliable()));
             }
             steam_networking::PerPeerStatus::AwaitingIncoming => {
-                ui.label("Awa❓")
-                    .on_hover_text("Awaiting incoming connection from this peer.");
+                ui.label("等待")
+                    .on_hover_text("正在等待来自该对等端的传入连接。");
             }
             steam_networking::PerPeerStatus::ConnectionPending => {
-                ui.label("Pen❓").on_hover_text("Connection pending.");
+                ui.label("挂起").on_hover_text("连接正在建立中。");
             }
             steam_networking::PerPeerStatus::NoFurtherInfo => {
-                ui.label("NoI❓")
-                    .on_hover_text("Connected, but no further info available.");
+                ui.label("无信息")
+                    .on_hover_text("已连接，但没有更多可用信息。");
             }
         }
         ui.end_row();

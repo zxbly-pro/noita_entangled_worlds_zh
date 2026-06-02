@@ -177,23 +177,23 @@ end
 
 local function get_item_tooltip(entry)
     if entry.is_wand then
-        return entry.active and "Wand (held)" or "Wand", "Slot " .. tostring(entry.slot_x + 1)
+        return entry.active and "法杖（当前手持）" or "法杖", "栏位 " .. tostring(entry.slot_x + 1)
     end
 
     local spell_info = get_spell_info(entry.entity)
     if spell_info ~= nil then
-        return translated(spell_info.name, spell_info.name or "Spell"),
+        return translated(spell_info.name, spell_info.name or "法术"),
             translated(spell_info.description, spell_info.description or "")
     end
 
     local item_comp = EntityGetFirstComponentIncludingDisabled(entry.entity, "ItemComponent")
     if item_comp ~= nil then
-        local name = translated(ComponentGetValue2(item_comp, "item_name"), "Item")
+        local name = translated(ComponentGetValue2(item_comp, "item_name"), "物品")
         local description = translated(ComponentGetValue2(item_comp, "ui_description"), "")
         return name, description
     end
 
-    return "Item", ""
+    return "物品", ""
 end
 
 local function render_item_icon(entry, x, y)
@@ -206,7 +206,7 @@ local function render_item_icon(entry, x, y)
     GuiImage(gui, new_id(), x, y, "data/ui_gfx/inventory/inventory_box.png", 1, SLOT_BG_SCALE, SLOT_BG_SCALE)
 
     local alive = entry.entity ~= nil and EntityGetIsAlive(entry.entity)
-    local name, description = "Item", ""
+    local name, description = "物品", ""
     if alive then
         name, description = get_item_tooltip(entry)
     end
@@ -333,11 +333,11 @@ local function render_inventory_grid(label, entries, slots_x, slots_y, x, y)
 end
 
 local function render_inventory_panel(player_data, inventory, x, y)
-    text_with_shadow(x, y, (player_data.name or "Player") .. "'s inventory")
+    text_with_shadow(x, y, (player_data.name or "玩家") .. "的背包")
 
-    local quick_right, quick_bottom = render_inventory_grid("Quick", inventory.quick, inventory.quick_slots, 1, x, y + 13)
+    local quick_right, quick_bottom = render_inventory_grid("快捷栏", inventory.quick, inventory.quick_slots, 1, x, y + 13)
     local full_right, full_bottom =
-        render_inventory_grid("Full", inventory.full, inventory.full_slots_x, inventory.full_slots_y, x, quick_bottom + 6)
+        render_inventory_grid("完整背包", inventory.full, inventory.full_slots_x, inventory.full_slots_y, x, quick_bottom + 6)
 
     return math.max(quick_right, full_right), full_bottom
 end
@@ -368,13 +368,13 @@ local function render_wand(label, wand, x, y, id_prefix)
         return right, bottom
     end
 
-    text_with_shadow(x, y + 11, "Could not render wand")
+    text_with_shadow(x, y + 11, "无法渲染法杖")
     return x + 90, y + 22
 end
 
 local function render_target_wands(inventory, x, y, screen_w, screen_h)
     if #inventory.wands == 0 then
-        text_with_shadow(x, y, "No synced wands")
+        text_with_shadow(x, y, "没有已同步的法杖")
         return x + 80, y + 11
     end
 
@@ -396,13 +396,13 @@ local function render_target_wands(inventory, x, y, screen_w, screen_h)
             end
 
             if column_x + WAND_TOOLTIP_ESTIMATED_WIDTH > screen_w - 8 then
-                text_with_shadow(column_x, column_y, "+" .. tostring(#inventory.wands - index + 1) .. " more wands")
+                text_with_shadow(column_x, column_y, "还有 " .. tostring(#inventory.wands - index + 1) .. " 根法杖")
                 return right, math.max(bottom, column_y + 11)
             end
 
-            local label = "Wand " .. tostring(index)
+            local label = "法杖 " .. tostring(index)
             if entry.active then
-                label = label .. " (held)"
+                label = label .. "（当前手持）"
             end
 
             local wand_right, wand_bottom =
@@ -441,14 +441,14 @@ function module.on_world_update()
         local wands_right = render_target_wands(inventory, x, inventory_bottom + 8, screen_w, screen_h)
         target_right = math.max(target_right, wands_right)
     else
-        text_with_shadow(x, inventory_bottom + 8, "No synced wands")
+        text_with_shadow(x, inventory_bottom + 8, "没有已同步的法杖")
     end
 
     local my_wand = get_active_wand(ctx.my_player)
     if my_wand ~= nil then
         local compare_x = math.max(target_right + 14, screen_w * 0.62)
         if compare_x + WAND_TOOLTIP_ESTIMATED_WIDTH < screen_w then
-            render_wand("Your wand", my_wand, compare_x, y, "ew_my_wand")
+            render_wand("你的法杖", my_wand, compare_x, y, "ew_my_wand")
         end
     end
 end

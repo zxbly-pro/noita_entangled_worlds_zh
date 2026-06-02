@@ -7,8 +7,8 @@ local rpc = net.new_rpc_namespace()
 local module = {}
 
 module.recent_damage = 0
-module.recent_message = "unknown"
-module.last_damage_message = "unknown"
+module.recent_message = "未知"
+module.last_damage_message = "未知"
 
 ModLuaFileAppend("data/scripts/game_helpers.lua", "mods/quant.ew/files/system/damage/append/game_helpers.lua")
 ModTextFileSetContent(
@@ -25,7 +25,7 @@ local function damage_received(damage, message, entity_id, add_healing_effect)
     module.recent_damage = module.recent_damage + damage
     if message ~= nil then
         module.recent_message = message
-        module.last_damage_message = GameTextGetTranslatedOrNot(message) .. " from " .. ctx.my_player.name
+        module.last_damage_message = GameTextGetTranslatedOrNot(message) .. "，来源：" .. ctx.my_player.name
     end
     if ctx.is_host then
         module.inflict_damage(damage)
@@ -71,7 +71,7 @@ function module.on_world_update_client()
         if not ctx.run_ended then
             rpc.deal_damage(module.recent_damage, module.recent_message)
             module.recent_damage = 0
-            module.recent_message = "unknown"
+            module.recent_message = "未知"
         end
     end
 end
@@ -179,7 +179,7 @@ function rpc.deal_damage(damage, message)
             EntitySetComponentIsEnabled(host_entity_id, protection_component_id, true)
         end
     end
-    GamePrint(string.format("Got %.2f damage: %s", damage * 25, message_n))
+    GamePrint(string.format("受到 %.2f 点伤害：%s", damage * 25, message_n))
 end
 
 function rpc.update_shared_health(hp, max_hp)

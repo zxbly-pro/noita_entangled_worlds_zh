@@ -37,9 +37,9 @@ function module.on_world_update()
 
     if anyone_in_meat ~= is_in_meat_current then
         if anyone_in_meat then
-            GamePrint("The air feels heavier...")
+            GamePrint("空气变得更沉重了……")
         else
-            GamePrint("The air feels normal")
+            GamePrint("空气恢复正常了")
         end
     end
     is_in_meat_current = anyone_in_meat

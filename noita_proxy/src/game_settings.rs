@@ -213,7 +213,7 @@ impl GameSettings {
                             .radio_value(
                                 &mut temp,
                                 GameMode::LocalHealth(LocalHealthMode::PvP),
-                                "PvP",
+                                "玩家对战",
                             )
                             .changed()
                     {
@@ -305,10 +305,10 @@ impl GameSettings {
                             }
 
                             LocalHealthMode::PvP => {
-                                ui.label("round based pvp mode");
+                                ui.label("回合制 PvP 模式");
                                 ui.add_space(5.0);
                                 {
-                                    ui.label("% money stolen on kill");
+                                    ui.label("击杀时夺取的金币百分比");
                                     let mut temp =
                                         game_settings.pvp_kill_steal.unwrap_or(def.pvp_kill_steal);
                                     if ui.add(Slider::new(&mut temp, 0..=100)).changed() {
@@ -319,7 +319,7 @@ impl GameSettings {
                                     let mut temp =
                                         game_settings.dont_steal.unwrap_or(def.dont_steal);
                                     if ui
-                                        .checkbox(&mut temp, "just gain money instead of stealing")
+                                        .checkbox(&mut temp, "只获得金币，不从对方处夺取")
                                         .changed()
                                     {
                                         game_settings.dont_steal = Some(temp)
@@ -328,12 +328,12 @@ impl GameSettings {
                                 {
                                     let mut temp =
                                         game_settings.chest_on_win.unwrap_or(def.chest_on_win);
-                                    if ui.checkbox(&mut temp, "spawns chest on win").changed() {
+                                    if ui.checkbox(&mut temp, "获胜时生成宝箱").changed() {
                                         game_settings.chest_on_win = Some(temp)
                                     }
                                 }
                                 let mut timed = game_settings.timed.unwrap_or(def.timed);
-                                if ui.checkbox(&mut timed, "timed rounds/hm").changed() {
+                                if ui.checkbox(&mut timed, "回合和圣山启用计时").changed() {
                                     game_settings.timed = Some(timed)
                                 }
                                 if timed {
@@ -342,14 +342,14 @@ impl GameSettings {
                                             .wait_for_time
                                             .unwrap_or(def.wait_for_time);
                                         if ui
-                                            .checkbox(&mut temp, "wait on time to finish round")
+                                            .checkbox(&mut temp, "等待计时结束后再结束回合")
                                             .changed()
                                         {
                                             game_settings.wait_for_time = Some(temp)
                                         }
                                     }
                                     {
-                                        ui.label("time in hm");
+                                        ui.label("圣山内停留时间");
                                         let mut temp =
                                             game_settings.time_in_hm.unwrap_or(def.time_in_hm);
                                         if ui.add(Slider::new(&mut temp, 30..=1200)).changed() {
@@ -357,7 +357,7 @@ impl GameSettings {
                                         }
                                     }
                                     {
-                                        ui.label("time in round");
+                                        ui.label("每回合时长");
                                         let mut temp =
                                             game_settings.time_out_hm.unwrap_or(def.time_out_hm);
                                         if ui.add(Slider::new(&mut temp, 30..=1200)).changed() {
@@ -369,10 +369,7 @@ impl GameSettings {
                                         .wait_on_players
                                         .unwrap_or(def.wait_on_players);
                                     if ui
-                                        .checkbox(
-                                            &mut temp,
-                                            "wait on players to finish round to start next round",
-                                        )
+                                        .checkbox(&mut temp, "等待所有玩家完成当前回合后再开始下一回合")
                                         .changed()
                                     {
                                         game_settings.wait_on_players = Some(temp)
@@ -397,7 +394,7 @@ impl GameSettings {
                 }
             }
             ui.add_space(10.0);
-            ui.label("World generation");
+            ui.label("世界生成");
             ui.horizontal(|ui| {
                 ui.checkbox(
                     &mut game_settings.use_constant_seed,
@@ -412,7 +409,7 @@ impl GameSettings {
             {
                 let mut temp = game_settings.duplicate.unwrap_or(def.duplicate);
                 if ui
-                    .checkbox(&mut temp, "duplicate synced entities")
+                    .checkbox(&mut temp, "复制同步实体")
                     .changed()
                 {
                     game_settings.duplicate = Some(temp)
@@ -425,7 +422,7 @@ impl GameSettings {
                 if ui
                     .checkbox(
                         &mut temp,
-                        "fix blackholes/explosions to work in unseen chunks",
+                        "修复黑洞和爆炸，使其可在未见区块中生效",
                     )
                     .changed()
                 {
@@ -437,7 +434,7 @@ impl GameSettings {
                     .disable_kummitus
                     .unwrap_or(def.disable_kummitus);
                 if ui
-                    .checkbox(&mut temp, "disable kummitus on non hosts")
+                    .checkbox(&mut temp, "在非主机端禁用幽魂")
                     .changed()
                 {
                     game_settings.disable_kummitus = Some(temp)
@@ -446,7 +443,7 @@ impl GameSettings {
             {
                 let mut temp = game_settings.give_host_sampo.unwrap_or(def.give_host_sampo);
                 if ui
-                    .checkbox(&mut temp, "give host sampo on collection")
+                    .checkbox(&mut temp, "拾取样本时给主机一份")
                     .changed()
                 {
                     game_settings.give_host_sampo = Some(temp)
@@ -470,7 +467,7 @@ impl GameSettings {
                     .spell_ban_list
                     .clone()
                     .unwrap_or(def.spell_ban_list);
-                ui.label("spell ban list, by internal names, comma seperated");
+                ui.label("法术禁用列表，使用内部名称并以逗号分隔");
                 if ui
                     .add_sized(
                         [ui.available_width() - 30.0, 20.0],
@@ -482,7 +479,7 @@ impl GameSettings {
                 }
             }
             ui.add_space(10.0);
-            ui.label("Player settings");
+            ui.label("玩家设置");
             ui.horizontal(|ui| {
                 ui.label(tr("connect_settings_max_players"));
                 let mut temp = game_settings.max_players.unwrap_or(def.max_players);
@@ -498,7 +495,7 @@ impl GameSettings {
             }
             {
                 let mut temp = game_settings.share_gold.unwrap_or(def.share_gold);
-                if ui.checkbox(&mut temp, "Share Gold").changed() {
+                if ui.checkbox(&mut temp, "共享金币").changed() {
                     game_settings.share_gold = Some(temp)
                 }
             }
@@ -514,14 +511,14 @@ impl GameSettings {
             {
                 let mut temp = game_settings.home_on_players.unwrap_or(def.home_on_players);
                 if ui
-                    .checkbox(&mut temp, "have homing home on players")
+                    .checkbox(&mut temp, "追踪效果可锁定玩家")
                     .changed()
                 {
                     game_settings.home_on_players = Some(temp)
                 }
             }
             ui.add_space(10.0);
-            ui.label("Perks");
+            ui.label("天赋");
             {
                 let mut temp = game_settings.randomize_perks.unwrap_or(def.randomize_perks);
                 if ui
@@ -536,7 +533,7 @@ impl GameSettings {
             }
             {
                 let mut temp = game_settings.share_all_perks.unwrap_or(def.share_all_perks);
-                if ui.checkbox(&mut temp, "Share all perks").changed() {
+                if ui.checkbox(&mut temp, "共享所有天赋").changed() {
                     game_settings.share_all_perks = Some(temp)
                 }
             }
@@ -545,7 +542,7 @@ impl GameSettings {
                     .perk_ban_list
                     .clone()
                     .unwrap_or(def.perk_ban_list);
-                ui.label("perk ban list, by internal names, comma seperated");
+                ui.label("天赋禁用列表，使用内部名称并以逗号分隔");
                 if ui
                     .add_sized(
                         [ui.available_width() - 30.0, 20.0],
@@ -562,7 +559,7 @@ impl GameSettings {
                     .clone()
                     .unwrap_or(def.disabled_globals);
                 ui.label(
-                    "shared/global perks to ignore, by internal names, comma seperated, will cause undefined behaviour do not report issues",
+                    "要忽略的共享或全局天赋，使用内部名称并以逗号分隔。此项可能导致未定义行为，请不要据此反馈问题",
                 );
                 if ui
                     .add_sized(

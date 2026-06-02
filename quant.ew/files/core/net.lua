@@ -178,7 +178,7 @@ function net.update()
     if log_stutters then
         local delta = (end_time - start_time) * 1000
         if delta > 1 then
-            GamePrint("Network message handling took longer than normal: "..delta)
+            GamePrint("网络消息处理耗时超过正常范围："..delta)
         end
     end
 end

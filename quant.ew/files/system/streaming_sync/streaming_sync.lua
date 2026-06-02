@@ -26,7 +26,7 @@ function rpc.remote_run_event(id)
                 event_weights[i] = -1.0
             end
             GamePrint(
-                "Incoming event " .. GameTextGetTranslatedOrNot(evt.ui_name) .. " from " .. ctx.rpc_player_data.name
+                "收到来自 " .. ctx.rpc_player_data.name .. " 的事件：" .. GameTextGetTranslatedOrNot(evt.ui_name)
             )
             break
         end

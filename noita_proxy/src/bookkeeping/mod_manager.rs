@@ -135,7 +135,7 @@ impl Modmanager {
                 if let Some(path) = &paths.noita_save {
                     info!("Trying to enable mod: {:?}", enable_mod(path));
                 }
-                ui.label("Will check mod install now...");
+                ui.label("现在将检查模组安装状态……");
                 self.state = State::CheckMod;
                 ui.request_repaint();
             }
@@ -245,7 +245,7 @@ impl Modmanager {
                 }
             }
             State::EyreErrorReport(err) => {
-                ui.label(format!("Encountered an error: \n {err:?}"));
+                ui.label(format!("遇到错误：\n {err:?}"));
                 if ui.button(tr("button_retry")).clicked() {
                     self.state = State::JustStarted;
                 }

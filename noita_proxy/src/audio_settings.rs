@@ -63,46 +63,46 @@ impl Default for AudioSettings {
 impl AudioSettings {
     pub fn show_ui(&mut self, ui: &mut Ui, main: bool) -> bool {
         let mut changed = false;
-        ui.label("drop off rate of audio from others");
+        ui.label("其他玩家音量随距离衰减的速度");
         changed |= ui
             .add(Slider::new(&mut self.dropoff, 0.0..=128.0))
             .changed();
-        ui.label("maximal range of audio");
+        ui.label("音频最大传播范围");
         changed |= ui.add(Slider::new(&mut self.range, 0..=4096)).changed();
-        ui.label("global input volume");
+        ui.label("全局输入音量");
         changed |= ui
             .add(Slider::new(&mut self.global_input_volume, 0.0..=8.0))
             .changed();
-        ui.label("global output volume");
+        ui.label("全局输出音量");
         changed |= ui
             .add(Slider::new(&mut self.global_output_volume, 0.0..=8.0))
             .changed();
-        changed |= ui.checkbox(&mut self.loopback, "loopback audio").changed();
+        changed |= ui.checkbox(&mut self.loopback, "回环音频").changed();
         changed |= ui
-            .checkbox(&mut self.global, "have voice always be played")
+            .checkbox(&mut self.global, "始终播放语音")
             .changed();
         changed |= ui
             .checkbox(
                 &mut self.push_to_talk,
-                "push to talk, keybinds in noita, T by default",
+                "按键发话，按键绑定跟随 Noita，默认是 T",
             )
             .changed();
         changed |= ui
             .checkbox(
                 &mut self.player_position,
-                "use player position rather than camera position",
+                "使用玩家位置而不是摄像机位置",
             )
             .changed();
-        changed |= ui.checkbox(&mut self.mute_in, "mute input").changed();
+        changed |= ui.checkbox(&mut self.mute_in, "静音输入").changed();
         changed |= ui
-            .checkbox(&mut self.mute_in_while_polied, "mute input while polied")
+            .checkbox(&mut self.mute_in_while_polied, "变形时静音输入")
             .changed();
         changed |= ui
-            .checkbox(&mut self.mute_in_while_dead, "mute input while dead")
+            .checkbox(&mut self.mute_in_while_dead, "死亡时静音输入")
             .changed();
-        changed |= ui.checkbox(&mut self.mute_out, "mute output").changed();
+        changed |= ui.checkbox(&mut self.mute_out, "静音输出").changed();
         if main {
-            changed |= ui.checkbox(&mut self.disabled, "disabled").changed();
+            changed |= ui.checkbox(&mut self.disabled, "禁用").changed();
             if self.input_devices.is_empty() && !self.disabled {
                 #[cfg(target_os = "linux")]
                 let host = cpal::available_hosts()
@@ -139,11 +139,11 @@ impl AudioSettings {
                         .and_then(|a| a.description().map(|s| s.name().to_string()).ok())
                 }
             }
-            ComboBox::from_label("Input Device")
+            ComboBox::from_label("输入设备")
                 .selected_text(
                     self.input_device
                         .clone()
-                        .unwrap_or_else(|| "None".to_string()),
+                        .unwrap_or_else(|| "无".to_string()),
                 )
                 .show_ui(ui, |ui| {
                     for device in &self.input_devices {
@@ -156,11 +156,11 @@ impl AudioSettings {
                         }
                     }
                 });
-            ComboBox::from_label("Output Device")
+            ComboBox::from_label("输出设备")
                 .selected_text(
                     self.output_device
                         .clone()
-                        .unwrap_or_else(|| "None".to_string()),
+                        .unwrap_or_else(|| "无".to_string()),
                 )
                 .show_ui(ui, |ui| {
                     for device in &self.output_devices {
@@ -174,7 +174,7 @@ impl AudioSettings {
                     }
                 });
         }
-        if ui.button("default").clicked() {
+        if ui.button("恢复默认").clicked() {
             *self = Default::default();
             changed = true;
         }

@@ -239,12 +239,12 @@ local tmr
 
 rpc.opts_everywhere()
 function rpc.win(num)
-    GamePrint(ctx.rpc_player_data.name .. " wins, score: " .. tostring(num))
+    GamePrint(ctx.rpc_player_data.name .. " 获胜了，得分：" .. tostring(num))
     local n = pvp.floor % #names_by_floor
     if n == 0 then
         n = #names_by_floor
     end
-    GamePrint("next biome: " .. names_by_floor[n])
+    GamePrint("下一个区域：" .. names_by_floor[n])
     wins[ctx.rpc_peer_id] = num
     create_board()
     if ctx.my_id == ctx.rpc_peer_id and ctx.proxy_opt.chest_on_win then
@@ -288,7 +288,7 @@ function rpc.add_floor(f, ping, msg)
         if n == 0 then
             n = #names_by_floor
         end
-        GamePrint(ctx.rpc_player_data.name .. " has entered: " .. names_by_floor[n])
+        GamePrint(ctx.rpc_player_data.name .. " 已进入：" .. names_by_floor[n])
     end
     if ping and ctx.rpc_peer_id ~= ctx.my_id and hm_y == nil then
         rpc.add_floor(pvp.floor, false, false)
@@ -329,10 +329,11 @@ function rpc.give_gold(peer, gold)
             ComponentSetValue2(wallet, "money", my_gold + gold)
             if math.ceil(gold) ~= 0 then
                 GamePrint(
-                    "gained "
-                        .. tostring(math.ceil(gold))
-                        .. " gold from killing: "
+                    "你从击杀 "
                         .. ctx.players[ctx.rpc_peer_id].name
+                        .. " 中获得了 "
+                        .. tostring(math.ceil(gold))
+                        .. " 金币"
                 )
             end
         end
@@ -445,10 +446,11 @@ function pvp.move_next_hm(died)
                     ComponentSetValue2(wallet, "money", gold * (1 - rt))
                     if math.ceil(gold * rt) ~= 0 then
                         GamePrint(
-                            "lost "
-                                .. tostring(math.ceil(gold * rt))
-                                .. " gold from dying to: "
+                            "你因被 "
                                 .. ctx.players[pvp.last_damage].name
+                                .. " 击杀而失去了 "
+                                .. tostring(math.ceil(gold * rt))
+                                .. " 金币"
                         )
                     end
                 end

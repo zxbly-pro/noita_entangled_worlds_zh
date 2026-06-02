@@ -35,8 +35,8 @@ end
 
 local function oh_another_world_state(entity)
     print("Another world state: " .. entity)
-    GamePrint("Another World State Entity detected")
-    GamePrint("Do a 'mods > restart with enabled mods' to avoid a crash")
+    GamePrint("检测到另一个世界状态实体")
+    GamePrint("请执行“模组 > 使用已启用模组重新启动”以避免崩溃")
     util.make_ephemerial(entity)
 end
 

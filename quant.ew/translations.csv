@@ -1,6 +1,6 @@
 ,en,ru,pt-br,es-es,de,fr-fr,it,pl,zh-cn,jp,ko,,NOTES – use \n for newline,max length
-entangled_mode,Entangled Worlds,,,,,,,,,,,,,
-entangled_dev,Dev,,,,,,,,,,,,,
-entangled_lobby_string,Running,,,,,,,,,,,,,
-entangled_heart_statue,Heart Statue,,,,,,,,,,,,,
-entangled_heart_statue_desc,The encased flesh of your friend.\nThrow this at any full HP pickup heart owned by the death to revive.,,,,,,,,,,,,,
+entangled_mode,Entangled Worlds,,,,,,,,纠缠世界,,,,,
+entangled_dev,Dev,,,,,,,,开发,,,,,
+entangled_lobby_string,Running,,,,,,,,运行中,,,,,
+entangled_heart_statue,Heart Statue,,,,,,,,心之雕像,,,,,
+entangled_heart_statue_desc,The encased flesh of your friend.\nThrow this at any full HP pickup heart owned by the death to revive.,,,,,,,,你朋友被封存的血肉。\n将它扔向任意一个属于死者的满血回复心即可将其复活。,,,,,

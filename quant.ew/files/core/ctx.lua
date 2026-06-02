@@ -65,7 +65,7 @@ function ctx.add_hook(hook_name, system_name, fn)
                             limit = 2.2
                         end
                         if delta_ms > limit and is_log_stutters_enabled() then
-                            GamePrint("Hook "..hook_name.." of system "..entry.system_name.." took way too long: "..delta_ms)
+                            GamePrint("系统 "..entry.system_name.." 的钩子 "..hook_name.." 耗时过长："..delta_ms)
                         end
                     end
                 end,

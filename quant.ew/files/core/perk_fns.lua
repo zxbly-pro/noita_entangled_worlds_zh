@@ -198,11 +198,11 @@ function perk_fns.update_perks(perk_data, player_data)
         if diff ~= 0 then
             local perk_info = get_perk_with_id(perk_list, perk_id)
             if perk_info == nil then
-                print("Unknown perk id: " .. perk_id)
+                print("未知天赋编号：" .. perk_id)
                 goto continue
             end
             if diff > 0 then
-                print("Player " .. player_data.name .. " got perk " .. GameTextGetTranslatedOrNot(perk_info.ui_name))
+                print("玩家 " .. player_data.name .. " 获得了天赋 " .. GameTextGetTranslatedOrNot(perk_info.ui_name))
                 for i = current + 1, count do
                     if give_one_perk(entity, perk_info, i, false, player_data.peer_id) then
                         player_data.twwe = true

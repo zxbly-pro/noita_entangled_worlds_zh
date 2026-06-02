@@ -14,7 +14,7 @@ local status_effects = status_effects
 
 local module = {}
 
-local last_damage_info = { 0, "unknown", 1 }
+local last_damage_info = { 0, "未知", 1 }
 
 local pvp
 if ctx.proxy_opt.pvp then
@@ -260,16 +260,16 @@ end
 rpc.opts_everywhere()
 rpc.opts_reliable()
 function rpc.show_death_message(untranslated_message, source_player)
-    local message = "unknown"
+    local message = "未知"
     if untranslated_message ~= nil then
         message = GameTextGetTranslatedOrNot(untranslated_message)
     end
     if source_player ~= nil then
-        message = message .. " from " .. source_player
+        message = message .. "，来源：" .. source_player
     end
 
     local dead_nickname = ctx.rpc_player_data.name
-    local full_msg = dead_nickname .. " died: " .. message
+    local full_msg = dead_nickname .. " 死亡了：" .. message
     GamePrint(full_msg)
 end
 
@@ -620,7 +620,7 @@ function module.on_world_update()
     if ctx.proxy_opt.no_notplayer and first and notplayer_active then
         GuiStartFrame(gui)
         local w, h = GuiGetScreenDimensions(gui)
-        local note = "Have your friend find your Heart Statue at last point of death, throw at full HP pickup to revive"
+        local note = "让你的队友前往你上次死亡的位置找到心形雕像，并把它投向满血回复物来复活你"
         local tw, th = GuiGetTextDimensions(gui, note)
         GuiText(gui, w - 2 - tw, h - 1 - th, note)
     end
@@ -662,8 +662,8 @@ function module.on_world_update_host()
             gameover_frame_check = 0
         end
         if gameover_primed and not any_player_alive then
-            print("Triggering a game over")
-            rpc.trigger_game_over("No players are alive")
+            print("正在触发游戏结束")
+            rpc.trigger_game_over("没有玩家存活")
         end
     end
 end
@@ -734,7 +734,7 @@ end
 rpc.opts_everywhere()
 function rpc.revive_message()
     local dead_nickname = ctx.rpc_player_data.name
-    local full_msg = dead_nickname .. " revived"
+    local full_msg = dead_nickname .. " 已复活"
     GamePrint(full_msg)
 end
 

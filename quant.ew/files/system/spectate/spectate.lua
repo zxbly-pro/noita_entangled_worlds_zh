@@ -396,9 +396,9 @@ function spectate.on_world_update()
         local w, h = GuiGetScreenDimensions(gui)
         local text
         if GameGetIsGamepadConnected() then
-            text = "Use d-pad-left and d-pad-right keys to spectate over other players."
+            text = "使用方向键左和方向键右来观战其他玩家。"
         else
-            text = "Use ',' and '.' keys to spectate over other players, '/' for self, ' for spectate closest to cursor"
+            text = "使用“,”和“.”键观战其他玩家，使用“/”返回自己，使用“'”观战鼠标附近最近的玩家"
         end
         local tw, th = GuiGetTextDimensions(gui, text)
         GuiText(gui, w - 2 - tw, h - 1 - th, text)

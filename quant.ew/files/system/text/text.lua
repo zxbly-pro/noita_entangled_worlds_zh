@@ -169,7 +169,7 @@ local function renderTextInput()
 
     if text == "" then
         GuiColorSetForNextWidget(gui, 0.5, 0.5, 0.5, 1)
-        GuiText(gui, 64, startY, "Message *")
+        GuiText(gui, 64, startY, "输入消息 *")
     else
         local wrappedMessage = wrapText(text or "", visibleChars, 0)
 
@@ -278,7 +278,7 @@ function module.on_world_update()
         if unread_messages_counter > 0 then --prevents hint from appearing all the time (can be annoying) and just appear when there is some unread message
             GuiStartFrame(gui)
             gui_started = true
-            create_chat_hint("Use 'Enter' to open chat.(" .. unread_messages_counter .. " unread messages)")
+            create_chat_hint("按“回车”打开聊天。（" .. unread_messages_counter .. " 条未读消息）")
         end
     end
 

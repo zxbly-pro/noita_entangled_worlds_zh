@@ -162,7 +162,7 @@ function rpc.check_mats(new_mats, ping)
     local is_true = false
     for a, b in pairs(mats) do
         if b ~= new_mats[a] then
-            GamePrint("MATERIALS DIFFER BETWEEN YOU AND " .. ctx.rpc_player_data.name .. ", CHECK MOD ORDER")
+            GamePrint("你与 " .. ctx.rpc_player_data.name .. " 的材料表不一致，请检查模组顺序")
             is_true = true
         end
     end

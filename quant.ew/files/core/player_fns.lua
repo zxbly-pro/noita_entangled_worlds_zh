@@ -540,8 +540,8 @@ function player_fns.spawn_player_for(peer_id, x, y, existing_playerdata)
     if ctx.events.new_player_seen then
         local count = tonumber(GlobalsGetValue("ew_player_count", "1")) + 1
         GlobalsSetValue("ew_player_count", tostring(count))
-        GamePrint("Player count " .. count)
-        print("Player count " .. count)
+        GamePrint("玩家数量 " .. count)
+        print("玩家数量 " .. count)
         ctx.hook.on_new_player_seen(new_playerdata, count)
     end
     GlobalsSetValue(global, "1")

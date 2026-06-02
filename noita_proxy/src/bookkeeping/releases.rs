@@ -106,7 +106,7 @@ impl Downloader {
 
     pub fn show_progress(&self, ui: &mut Ui) {
         let (current, max) = self.progress();
-        ui.label(format!("{current} out of {max} bytes"));
+        ui.label(format!("{current} / {max} 字节"));
         ui.add(egui::ProgressBar::new(current as f32 / max as f32));
         ui.ctx().request_repaint_after(Duration::from_millis(200));
     }

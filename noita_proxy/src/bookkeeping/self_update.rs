@@ -66,7 +66,7 @@ impl SelfUpdateManager {
 
     pub fn display_version(&mut self, ui: &mut Ui) {
         ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
-            ui.label(concat!("Noita Proxy v", env!("CARGO_PKG_VERSION"),));
+            ui.label(concat!("Noita Proxy 版本 v", env!("CARGO_PKG_VERSION"),));
             match self.latest_check.ready() {
                 Some(&Some(VersionCheckResult {
                     newest: _,
@@ -140,7 +140,7 @@ impl SelfUpdateManager {
                     let _ = SelfRestarter::new().and_then(|mut r| r.restart());
                 }
                 Some(Err(err)) => {
-                    ui.label(format!("Could not update proxy: {err}"));
+                    ui.label(format!("无法更新代理程序：{err}"));
                 }
                 None => {
                     ctx.request_repaint();
@@ -149,10 +149,10 @@ impl SelfUpdateManager {
                 }
             },
             State::ReleasesError(err) => {
-                ui.label(format!("Encountered an error: {err:?}"));
+                ui.label(format!("遇到错误：{err:?}"));
             }
             State::ReleasesError2(err) => {
-                ui.label(format!("Encountered an error:\n{err}"));
+                ui.label(format!("遇到错误：\n{err}"));
             }
         }
     }

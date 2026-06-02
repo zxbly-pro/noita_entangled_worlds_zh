@@ -289,7 +289,7 @@ pub fn player_select_current_color_slot(
                 let hat = flags.join("secret_hat").exists();
                 let amulet = flags.join("secret_amulet").exists();
                 let gem = flags.join("secret_amulet_gem").exists();
-                ui.checkbox(&mut appearance.invert_border, "Invert border");
+                ui.checkbox(&mut appearance.invert_border, "反转边框");
                 if hat {
                     ui.checkbox(&mut appearance.cosmetics.0, tr("Crown"));
                 }

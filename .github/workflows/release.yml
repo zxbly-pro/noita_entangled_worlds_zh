@@ -2,6 +2,9 @@ name: release
 
 on: [push, pull_request]
 
+env:
+  EW_RELEASE_REPOSITORY: zxbly-pro/noita_entangled_worlds_zh
+
 jobs:
   build-mod:
     runs-on: ubuntu-22.04

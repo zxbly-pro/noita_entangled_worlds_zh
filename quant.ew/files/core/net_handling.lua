@@ -129,11 +129,11 @@ end
 function net_handling.proxy.leave(_, peer_id)
     local player = ctx.players[peer_id]
     if player ~= nil then
-        GamePrint("Player " .. player.name .. " left")
+        GamePrint("玩家 " .. player.name .. " 已离开")
         EntityKill(player.entity)
         ctx.players[peer_id] = nil
     else
-        GamePrint("Player " .. peer_id .. " left")
+        GamePrint("玩家 " .. peer_id .. " 已离开")
     end
 end
 
@@ -258,7 +258,7 @@ function net_handling.mod.join_notify(_, name)
         if name[2] == "" then
             name[2] = "new run"
         end
-        GamePrint(name[1] .. " started gamemode " .. name[2])
+        GamePrint(name[1] .. " 已开始游戏模式 " .. name[2])
     end
 end
 

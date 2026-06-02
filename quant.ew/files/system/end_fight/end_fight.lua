@@ -114,7 +114,7 @@ function rpc.try_kill(x, y)
             end
         end
     end)
-    GamePrintImportant(ctx.rpc_player_data.name .. " wins")
+    GamePrintImportant(ctx.rpc_player_data.name .. " 获胜了")
     winner = ctx.rpc_peer_id
 end
 
@@ -225,7 +225,7 @@ function end_fight.on_world_update()
                         GameGetWorldStateEntity()
                     )
                 end
-                GamePrintImportant("Fight for the spoils")
+                GamePrintImportant("为战利品而战")
                 init = GameGetFrameNum() + 10
                 if y > 10414 then
                     teleport_random()

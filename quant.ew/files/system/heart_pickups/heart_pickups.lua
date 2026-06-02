@@ -62,7 +62,7 @@ local function heart_pickup(heart)
         EntityAddChild(entity_who_picked, child_id)
     end
 
-    GamePrint("Player " .. peer_data.name .. " picked up a heart")
+    GamePrint("玩家 " .. peer_data.name .. " 拾取了一个心形回复物")
     GameTriggerMusicCue("item")
 end
 

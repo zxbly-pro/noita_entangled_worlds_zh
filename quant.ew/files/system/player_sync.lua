@@ -132,20 +132,20 @@ function rpc.check_gamemode(gamemode, seed, world_num, has_won)
     local my_seed = StatsGetValue("world_seed")
 
     if not_fine then
-        GamePrint("Player: " .. ctx.rpc_player_data.name .. ", is on a different gamemode number then you")
-        GamePrint("their game mode: " .. gamemode)
-        GamePrint("your game mode: " .. gm)
+        GamePrint("玩家：" .. ctx.rpc_player_data.name .. "，其游戏模式编号与你不同")
+        GamePrint("对方的游戏模式：" .. gamemode)
+        GamePrint("你的游戏模式：" .. gm)
     end
     if my_seed ~= seed then
-        GamePrint("Player: " .. ctx.rpc_player_data.name .. ", is on a different seed then you")
-        GamePrint("their seed: " .. seed)
-        GamePrint("your seed: " .. my_seed)
+        GamePrint("玩家：" .. ctx.rpc_player_data.name .. "，其种子与你不同")
+        GamePrint("对方的种子：" .. seed)
+        GamePrint("你的种子：" .. my_seed)
     end
     if world_num ~= ctx.proxy_opt.world_num then
-        GamePrint("Player: " .. ctx.rpc_player_data.name .. ", is on a different world number then you")
-        GamePrint("their num: " .. world_num)
-        GamePrint("your num: " .. ctx.proxy_opt.world_num)
-        GamePrint("world sync stops from this")
+        GamePrint("玩家：" .. ctx.rpc_player_data.name .. "，其世界编号与你不同")
+        GamePrint("对方的编号：" .. world_num)
+        GamePrint("你的编号：" .. ctx.proxy_opt.world_num)
+        GamePrint("世界同步将因此停止")
     end
     if has_won and not GameHasFlagRun("ending_game_completed") then
         GameAddFlagRun("ending_game_completed")

@@ -84,9 +84,9 @@ local function draw_leaderboards_gui()
         end
     end
     if #times ~= 0 then
-        GuiText(gui, text_x, text_y - 10, "Lap times")
+        GuiText(gui, text_x, text_y - 10, "圈速排行榜")
         for _, data in ipairs(times) do
-            GuiText(gui, text_x, text_y, string.format("%-16s %.02fs", data[2], data[1] / 60))
+            GuiText(gui, text_x, text_y, string.format("%-16s %.02f秒", data[2], data[1] / 60))
             text_y = text_y + 10
         end
     end
