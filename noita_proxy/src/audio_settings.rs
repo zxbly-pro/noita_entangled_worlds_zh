@@ -78,9 +78,7 @@ impl AudioSettings {
             .add(Slider::new(&mut self.global_output_volume, 0.0..=8.0))
             .changed();
         changed |= ui.checkbox(&mut self.loopback, "回环音频").changed();
-        changed |= ui
-            .checkbox(&mut self.global, "始终播放语音")
-            .changed();
+        changed |= ui.checkbox(&mut self.global, "始终播放语音").changed();
         changed |= ui
             .checkbox(
                 &mut self.push_to_talk,
@@ -88,10 +86,7 @@ impl AudioSettings {
             )
             .changed();
         changed |= ui
-            .checkbox(
-                &mut self.player_position,
-                "使用玩家位置而不是摄像机位置",
-            )
+            .checkbox(&mut self.player_position, "使用玩家位置而不是摄像机位置")
             .changed();
         changed |= ui.checkbox(&mut self.mute_in, "静音输入").changed();
         changed |= ui

@@ -657,9 +657,15 @@ impl App {
                                                 } else {
                                                     Color32::RED
                                                 };
-                                                ui.colored_label(color, format!("纠缠世界 {version}"));
+                                                ui.colored_label(
+                                                    color,
+                                                    format!("纠缠世界 {version}"),
+                                                );
                                             } else if info.is_noita_online {
-                                                ui.colored_label(Color32::LIGHT_BLUE, "Noita Online 房间");
+                                                ui.colored_label(
+                                                    Color32::LIGHT_BLUE,
+                                                    "Noita Online 房间",
+                                                );
                                             } else {
                                                 ui.label(tr("Not-Entangled-Worlds-lobby"));
                                             }
@@ -1615,11 +1621,9 @@ fn add_per_status_ui(
     ui.label("最大发送速率");
     ui.label("待发不可靠")
         .on_hover_text("等待发送的不可靠消息数量");
-    ui.label("待发可靠")
-        .on_hover_text("等待发送的可靠消息数量");
-    ui.label("未确认").on_hover_text(
-        "已经发送但尚未收到确认的可靠数据包数量。",
-    );
+    ui.label("待发可靠").on_hover_text("等待发送的可靠消息数量");
+    ui.label("未确认")
+        .on_hover_text("已经发送但尚未收到确认的可靠数据包数量。");
     ui.end_row();
 
     for steam_networking::PerPeerStatusEntry { peer, status } in &report.per_peer_statuses {
@@ -1639,7 +1643,10 @@ fn add_per_status_ui(
                 ));
                 ui.label(format!("{} 字节/秒", realtimeinfo.in_bytes_per_sec()));
                 ui.label(format!("{} 字节/秒", realtimeinfo.out_bytes_per_sec()));
-                ui.label(format!("{} 字节/秒", realtimeinfo.send_rate_bytes_per_sec()));
+                ui.label(format!(
+                    "{} 字节/秒",
+                    realtimeinfo.send_rate_bytes_per_sec()
+                ));
                 ui.label(format!("{}", realtimeinfo.pending_unreliable()));
                 ui.label(format!("{}", realtimeinfo.pending_reliable()));
                 ui.label(format!("{}", realtimeinfo.sent_unacked_reliable()));
