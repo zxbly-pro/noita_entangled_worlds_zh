@@ -1385,8 +1385,7 @@ impl WorldManager {
             .map(|(coord, data)| (*coord, data.clone()))
             .collect();
         let relevant_chunk_count = relevant_chunks.len();
-        let chunk_storage: Vec<(ChunkCoord, ChunkData)> = self
-            relevant_chunks
+        let chunk_storage: Vec<(ChunkCoord, ChunkData)> = relevant_chunks
             .into_par_iter()
             .map(|(chunk_coord, chunk_encoded)| {
                 let chunk_start_x = chunk_coord.0 * CHUNK_SIZE as i32;
