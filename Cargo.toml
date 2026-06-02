@@ -26,4 +26,4 @@ members = [
 noita_api = {path="noita_api"}
 noita_api_macro = {path="noita_api/noita_api_macro"}
 shared = {path="shared"}
-tangled = {git="https://github.com/zxbly-pro/tangled", version="0.6.0"}
+tangled = {git="https://github.com/zxbly-pro/tangled", rev="2a1e453593f43e3eda09f507e3274b463320ab45", version="0.5.0"}

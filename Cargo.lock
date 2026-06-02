@@ -1609,13 +1609,12 @@ dependencies = [
 
 [[package]]
 name = "fastbloom"
-version = "0.17.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef975e30683b2d965054bb0a836f8973857c4ebf6acf274fe46617cd285060d8"
+checksum = "4e7f34442dbe69c60fe8eaf58a8cafff81a1f278816d8ab4db255b3bef4ac3c4"
 dependencies = [
- "foldhash 0.2.0",
+ "getrandom 0.3.4",
  "libm",
- "portable-atomic",
  "rand 0.9.4",
  "siphasher",
 ]
@@ -4144,27 +4143,8 @@ dependencies = [
  "bytes",
  "cfg_aliases",
  "pin-project-lite",
- "quinn-proto 0.11.14",
- "quinn-udp 0.5.14",
- "rustc-hash 2.1.2",
- "rustls",
- "socket2",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
- "web-time",
-]
-
-[[package]]
-name = "quinn"
-version = "0.12.0"
-source = "git+https://github.com/quinn-rs/quinn#31f7f12f5fecc6a849e3b6053bd39bb7e7294a04"
-dependencies = [
- "bytes",
- "cfg_aliases",
- "pin-project-lite",
- "quinn-proto 0.12.0",
- "quinn-udp 0.6.1",
+ "quinn-proto",
+ "quinn-udp",
  "rustc-hash 2.1.2",
  "rustls",
  "socket2",
@@ -4182,26 +4162,6 @@ checksum = "434b42fec591c96ef50e21e886936e66d3cc3f737104fdb9b737c40ffb94c098"
 dependencies = [
  "aws-lc-rs",
  "bytes",
- "getrandom 0.3.4",
- "lru-slab",
- "rand 0.9.4",
- "ring",
- "rustc-hash 2.1.2",
- "rustls",
- "rustls-pki-types",
- "slab",
- "thiserror 2.0.18",
- "tinyvec",
- "tracing",
- "web-time",
-]
-
-[[package]]
-name = "quinn-proto"
-version = "0.12.0"
-source = "git+https://github.com/quinn-rs/quinn#31f7f12f5fecc6a849e3b6053bd39bb7e7294a04"
-dependencies = [
- "bytes",
  "fastbloom",
  "getrandom 0.3.4",
  "lru-slab",
@@ -4210,7 +4170,7 @@ dependencies = [
  "rustc-hash 2.1.2",
  "rustls",
  "rustls-pki-types",
- "rustls-platform-verifier 0.7.0",
+ "rustls-platform-verifier",
  "slab",
  "thiserror 2.0.18",
  "tinyvec",
@@ -4230,18 +4190,6 @@ dependencies = [
  "socket2",
  "tracing",
  "windows-sys 0.60.2",
-]
-
-[[package]]
-name = "quinn-udp"
-version = "0.6.1"
-source = "git+https://github.com/quinn-rs/quinn#31f7f12f5fecc6a849e3b6053bd39bb7e7294a04"
-dependencies = [
- "cfg_aliases",
- "libc",
- "socket2",
- "tracing",
- "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4498,10 +4446,10 @@ dependencies = [
  "mime",
  "percent-encoding",
  "pin-project-lite",
- "quinn 0.11.9",
+ "quinn",
  "rustls",
  "rustls-pki-types",
- "rustls-platform-verifier 0.6.2",
+ "rustls-platform-verifier",
  "serde",
  "serde_json",
  "sync_wrapper",
@@ -4762,27 +4710,6 @@ dependencies = [
  "core-foundation 0.10.1",
  "core-foundation-sys",
  "jni 0.21.1",
- "log",
- "once_cell",
- "rustls",
- "rustls-native-certs",
- "rustls-platform-verifier-android",
- "rustls-webpki",
- "security-framework",
- "security-framework-sys",
- "webpki-root-certs",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "rustls-platform-verifier"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26d1e2536ce4f35f4846aa13bff16bd0ff40157cdb14cc056c7b14ba41233ba0"
-dependencies = [
- "core-foundation 0.10.1",
- "core-foundation-sys",
- "jni 0.22.4",
  "log",
  "once_cell",
  "rustls",
@@ -5544,13 +5471,13 @@ dependencies = [
 
 [[package]]
 name = "tangled"
-version = "0.6.0"
-source = "git+https://github.com/zxbly-pro/tangled#030a18dd538b416a46f0b67c2ecc0cf3d87d2aa0"
+version = "0.5.0"
+source = "git+https://github.com/zxbly-pro/tangled?rev=2a1e453593f43e3eda09f507e3274b463320ab45#2a1e453593f43e3eda09f507e3274b463320ab45"
 dependencies = [
  "bitcode",
  "crossbeam",
  "dashmap",
- "quinn 0.12.0",
+ "quinn",
  "rcgen",
  "socket2",
  "thiserror 2.0.18",
