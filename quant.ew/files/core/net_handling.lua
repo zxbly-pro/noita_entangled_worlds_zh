@@ -4,6 +4,7 @@ local net_handling = {
     proxy = {},
     mod = {},
     pending_requests = {},
+    pending_request_frames = {},
 }
 
 function net_handling.proxy.seed(_, value)
@@ -22,6 +23,7 @@ function net_handling.proxy.normal_flag(_, flag, new)
     if coro ~= nil then
         coroutine.resume(coro, new == "true")
         net_handling.pending_requests[flag] = nil
+        net_handling.pending_request_frames[flag] = nil
     end
 end
 

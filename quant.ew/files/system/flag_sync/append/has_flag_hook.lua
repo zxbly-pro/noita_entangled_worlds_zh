@@ -1,5 +1,6 @@
 local old = HasFlagPersistent
 local old_add_flag = AddFlagPersistent
+EwOriginalHasPersistentFlag = old
 
 function HasFlagPersistent(flag)
     if EwHasPersistentFlag ~= nil then
@@ -13,6 +14,5 @@ function HasFlagPersistent(flag)
 end
 
 function AddFlagPersistent(flag)
-    GameAddFlagRun("ew_pf_" .. flag)
     return old_add_flag(flag)
 end

@@ -185,6 +185,41 @@ local function fire()
     end
 end
 
+local function mark_projectile_seed(player_data, key, rng, kind)
+    player_data.projectile_seed_chain[key] = rng
+    player_data.projectile_seed_kind[key] = kind
+end
+
+local function cleanup_projectile_seed_chain(player_data)
+    local chain = player_data.projectile_seed_chain
+    local kind = player_data.projectile_seed_kind
+    if chain == nil or kind == nil then
+        return
+    end
+    local count = 0
+    for key, seed_kind in pairs(kind) do
+        count = count + 1
+        if seed_kind == "projectile" and not EntityGetIsAlive(key) then
+            chain[key] = nil
+            kind[key] = nil
+            count = count - 1
+        end
+    end
+    if count <= 4096 then
+        return
+    end
+    for key, seed_kind in pairs(kind) do
+        if count <= 3072 then
+            break
+        end
+        if seed_kind == "projectile" then
+            chain[key] = nil
+            kind[key] = nil
+            count = count - 1
+        end
+    end
+end
+
 function OnProjectileFired(
     shooter_id,
     projectile_id,
@@ -249,9 +284,9 @@ function OnProjectileFired(
             rng = (shooter_player_data.projectile_seed_chain[entity_that_shot] or 0) + 25
         end
     end
-    shooter_player_data.projectile_seed_chain[shooter_id - 1] = rng
-    shooter_player_data.projectile_seed_chain[entity_that_shot] = rng
-    shooter_player_data.projectile_seed_chain[projectile_id] = rng
+    mark_projectile_seed(shooter_player_data, shooter_id - 1, rng, "root")
+    mark_projectile_seed(shooter_player_data, entity_that_shot, rng, "source")
+    mark_projectile_seed(shooter_player_data, projectile_id, rng, "projectile")
     for _, lua in ipairs(EntityGetComponent(projectile_id, "LuaComponent") or {}) do
         local src = ComponentGetValue2(lua, "script_source_file")
         if
@@ -482,6 +517,44 @@ function OnPlayerSpawned(player_entity) -- This runs when player entity has been
 end
 
 local last_n = 1
+local pending_entity_scan_end = 1
+local pending_entity_scan_cursor = 2
+local max_new_entities_per_frame = 2048
+local max_new_entity_callbacks_per_frame = 512
+
+local function process_new_entities_range(from_ent, to_ent)
+    local arr = {}
+    for ent = from_ent, to_ent do
+        if EntityGetIsAlive(ent) then
+            if
+                not ctx.is_host
+                and ctx.proxy_opt.disable_kummitus
+                and EntityGetName(ent) == "$animal_playerghost"
+            then
+                EntityKill(ent)
+            else
+                table.insert(arr, ent)
+                local homing = EntityGetFirstComponentIncludingDisabled(ent, "HomingComponent")
+                if homing ~= nil then
+                    local projcom = EntityGetFirstComponentIncludingDisabled(ent, "ProjectileComponent")
+                    if projcom ~= nil then
+                        local whoshot = ComponentGetValue2(projcom, "mWhoShot")
+                        if EntityHasTag(whoshot, "ew_notplayer") or GameHasFlagRun("ending_game_completed") then
+                            ComponentSetValue2(homing, "target_tag", "ew_peer")
+                        end
+                    end
+                end
+                if #arr >= max_new_entity_callbacks_per_frame then
+                    ctx.hook.on_new_entity(arr)
+                    arr = {}
+                end
+            end
+        end
+    end
+    if #arr ~= 0 then
+        ctx.hook.on_new_entity(arr)
+    end
+end
 
 local function on_world_pre_update_inner()
     if ctx.my_player == nil or ctx.my_player.entity == nil then
@@ -543,54 +616,27 @@ local function on_world_pre_update_inner()
     end
 
     if not ctx.run_ended then
-        --local ti = GameGetRealWorldTimeSinceStarted()
         local n = EntitiesGetMaxID()
-        local arr = {}
-        for ent = last_n + 1, n do
-            if EntityGetIsAlive(ent) then
-                if
-                    not ctx.is_host
-                    and ctx.proxy_opt.disable_kummitus
-                    and EntityGetName(ent) == "$animal_playerghost"
-                then
-                    EntityKill(ent)
-                else
-                    table.insert(arr, ent)
-                    local homing = EntityGetFirstComponentIncludingDisabled(ent, "HomingComponent")
-                    if homing ~= nil then
-                        local projcom = EntityGetFirstComponentIncludingDisabled(ent, "ProjectileComponent")
-                        if projcom ~= nil then
-                            local whoshot = ComponentGetValue2(projcom, "mWhoShot")
-                            if EntityHasTag(whoshot, "ew_notplayer") or GameHasFlagRun("ending_game_completed") then
-                                ComponentSetValue2(homing, "target_tag", "ew_peer")
-                            end
-                        end
-                    end
-                end
-            end
+        if n > pending_entity_scan_end then
+            pending_entity_scan_end = n
         end
-        if #arr ~= 0 then
-            ctx.hook.on_new_entity(arr)
+        if pending_entity_scan_cursor <= pending_entity_scan_end then
+            local end_ent = math.min(
+                pending_entity_scan_cursor + max_new_entities_per_frame - 1,
+                pending_entity_scan_end
+            )
+            process_new_entities_range(pending_entity_scan_cursor, end_ent)
+            pending_entity_scan_cursor = end_ent + 1
+        else
+            pending_entity_scan_cursor = last_n + 1
         end
-        last_n = n
-        --local tf = GameGetRealWorldTimeSinceStarted()
+        last_n = pending_entity_scan_end
         if ctx.is_host then
             ctx.hook.on_world_update_host()
         else
             ctx.hook.on_world_update_client()
         end
-        --local tf2 = GameGetRealWorldTimeSinceStarted()
         ctx.hook.on_world_update()
-        --[[local tf3 = GameGetRealWorldTimeSinceStarted()
-        if GameGetFrameNum() % 5 == 0 then
-            GamePrint(
-                math.ceil((tf - ti) * 1000000)
-                    .. " "
-                    .. math.ceil((tf2 - tf) * 1000000)
-                    .. " "
-                    .. math.ceil((tf3 - tf2) * 1000000)
-            )
-        end]]
     end
 
     perk_fns.on_world_update()
@@ -618,6 +664,12 @@ end
 local function on_world_post_update_inner()
     if ctx.my_player == nil or ctx.my_player.entity == nil then
         return
+    end
+
+    if GameGetFrameNum() % 120 == 17 then
+        for _, player_data in pairs(ctx.players) do
+            cleanup_projectile_seed_chain(player_data)
+        end
     end
 
     if ctx.run_ended then

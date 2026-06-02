@@ -344,6 +344,18 @@ impl WorldManager {
         self.chunk_storage.clone()
     }
 
+    pub(crate) fn chunk_storage_len(&self) -> usize {
+        self.chunk_storage.len()
+    }
+
+    pub(crate) fn chunk_state_len(&self) -> usize {
+        self.chunk_state.len()
+    }
+
+    pub(crate) fn authority_map_len(&self) -> usize {
+        self.authority_map.len()
+    }
+
     fn update_world_info(&mut self, pos: Option<(i32, i32, i32, i32, bool)>, world_num: u8) {
         if let Some((px, py, cx, cy, is_not)) = pos {
             self.my_pos = (px, py);
@@ -1364,13 +1376,18 @@ impl WorldManager {
         let end = x + radius;
 
         let air_pixel = Pixel::default();
-        let chunk_storage: Vec<(ChunkCoord, ChunkData)> = self
+        let relevant_chunks: Vec<(ChunkCoord, ChunkData)> = self
             .chunk_storage
-            .clone()
-            .into_par_iter()
+            .iter()
             .filter(|(coord, _)| {
                 min_cx <= coord.0 && max_cx >= coord.0 && coord.1 <= max_cy && coord.1 >= min_cy
             })
+            .map(|(coord, data)| (*coord, data.clone()))
+            .collect();
+        let relevant_chunk_count = relevant_chunks.len();
+        let chunk_storage: Vec<(ChunkCoord, ChunkData)> = self
+            relevant_chunks
+            .into_par_iter()
             .map(|(chunk_coord, chunk_encoded)| {
                 let chunk_start_x = chunk_coord.0 * CHUNK_SIZE as i32;
                 let chunk_end_x = chunk_start_x + CHUNK_SIZE as i32;
@@ -1394,6 +1411,12 @@ impl WorldManager {
                 (chunk_coord, chunk.to_chunk_data())
             })
             .collect();
+        debug!(
+            event = "cut_through_world_chunks",
+            total_chunks = self.chunk_storage.len(),
+            relevant_chunks = relevant_chunk_count,
+            "Processed cut-through-world chunk subset"
+        );
         for entry in chunk_storage.into_iter() {
             self.chunk_storage.insert(entry.0, entry.1);
         }
@@ -2523,6 +2546,11 @@ fn should_process_chunk(
 impl Drop for WorldManager {
     fn drop(&mut self) {
         if self.is_host {
+            info!(
+                event = "save_world_chunks",
+                chunk_count = self.chunk_storage.len(),
+                "Saving world chunk data"
+            );
             self.save_state.save(&self.chunk_storage);
             info!("Saved chunk data");
         }

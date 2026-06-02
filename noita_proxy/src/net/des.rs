@@ -194,6 +194,14 @@ impl DesManager {
         mem::take(&mut self.pending_messages)
     }
 
+    pub(crate) fn entity_count(&self) -> usize {
+        self.entity_storage.entities.len()
+    }
+
+    pub(crate) fn authority_count(&self) -> usize {
+        self.authority.len()
+    }
+
     pub(crate) fn reset(&mut self) {
         self.entity_storage = Default::default();
         self.rtree = RTree::default();
@@ -205,6 +213,11 @@ impl DesManager {
 impl Drop for DesManager {
     fn drop(&mut self) {
         if self.is_host {
+            info!(
+                event = "save_des_entity_storage",
+                entity_count = self.entity_storage.entities.len(),
+                "Saving DES entity storage"
+            );
             self.save_state.save(&self.entity_storage);
         }
     }

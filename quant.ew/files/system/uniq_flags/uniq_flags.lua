@@ -9,6 +9,7 @@ end
 function module.request_flag(flag)
     local current = coroutine.running()
     net_handling.pending_requests[flag] = current
+    net_handling.pending_request_frames[flag] = GameGetFrameNum()
     request_flag(flag)
     return coroutine.yield()
 end
@@ -51,6 +52,18 @@ function module.on_new_entity(arr)
                 ewext.notrack(ent)
                 request_flag_slow(flag, ent)
             end
+        end
+    end
+end
+
+function module.on_world_update()
+    if GameGetFrameNum() % 600 ~= 59 then
+        return
+    end
+    for flag, frame in pairs(net_handling.pending_request_frames) do
+        if frame + 60 * 30 < GameGetFrameNum() then
+            net_handling.pending_request_frames[flag] = nil
+            net_handling.pending_requests[flag] = nil
         end
     end
 end

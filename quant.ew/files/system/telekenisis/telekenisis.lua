@@ -118,10 +118,12 @@ function tele.on_world_update()
         if start_i <= n then
             if not EntityGetIsAlive(ent) then
                 ent_to_body[ent] = nil
+                sent_track_req[ent] = nil
             else
                 ent_to_body[ent] = PhysicsBodyIDGetFromEntity(ent)
                 if ent_to_body[ent] ~= nil and #ent_to_body[ent] == 0 then
                     ent_to_body[ent] = nil
+                    sent_track_req[ent] = nil
                 end
             end
         end
@@ -152,8 +154,8 @@ function tele.on_world_update()
                         ComponentGetValue2(com, "mStartBodyDistance"),
                         ComponentGetValue2(com, "mMinBodyDistance")
                     )
-                elseif not table.contains(sent_track_req, ent) then
-                    table.insert(sent_track_req, ent)
+                elseif not sent_track_req[ent] then
+                    sent_track_req[ent] = true
                     if EntityGetIsAlive(ent) then
                         ewext.track(ent)
                     end

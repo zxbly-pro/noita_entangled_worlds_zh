@@ -378,6 +378,7 @@ local player_fns = {
             controls = {},
             projectile_rng_init = {},
             projectile_seed_chain = {}, -- TODO clean
+            projectile_seed_kind = {},
             currently_polymorphed = false,
             mouse_x = 0,
             pos_x = 0,

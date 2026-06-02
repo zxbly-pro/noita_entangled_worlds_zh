@@ -492,6 +492,7 @@ impl NetManager {
             audio: audio_state,
         };
         let mut last_iter = Instant::now();
+        let mut last_diag_log = Instant::now();
         let path = crate::player_path(self.init_settings.paths.noita_quantew_install.clone());
         let player_image = if path.exists() {
             image::open(path)
@@ -709,6 +710,23 @@ impl NetManager {
                     let data = NetMsg::MapData(map);
                     self.broadcast(&data, Reliability::Reliable)
                 }
+            }
+            if last_diag_log.elapsed() >= Duration::from_secs(30) {
+                info!(
+                    event = "runtime_diag",
+                    local_connected = state.ms.is_some(),
+                    peer_count = self.peer.iter_peer_ids().len(),
+                    chunk_storage = state.world.chunk_storage_len(),
+                    chunk_states = state.world.chunk_state_len(),
+                    chunk_authorities = state.world.authority_map_len(),
+                    des_entities = state.des.entity_count(),
+                    des_authorities = state.des.authority_count(),
+                    flags = state.flags.len(),
+                    chunk_map = self.chunk_map.lock().unwrap().len(),
+                    players_sprite = self.players_sprite.lock().unwrap().len(),
+                    "Runtime diagnostic snapshot"
+                );
+                last_diag_log = Instant::now();
             }
             // Don't do excessive busy-waiting;
             let min_update_time = Duration::from_millis(8);
@@ -1715,6 +1733,11 @@ impl SaveStateEntry for FxHashSet<String> {
 impl Drop for NetInnerState {
     fn drop(&mut self) {
         if self.world.is_host {
+            info!(
+                event = "save_flag_info",
+                flag_count = self.flags.len(),
+                "Saving flag info"
+            );
             self.world.save_state.save(&self.flags);
             info!("Saved flag info");
         }
