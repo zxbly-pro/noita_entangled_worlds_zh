@@ -129,7 +129,16 @@ function rpc.check_gamemode(gamemode, seed, world_num, has_won)
         gm = "new run"
     end
     local not_fine = gamemode ~= gm
+    local proxy_seed = ctx.initial_proxy_seed or ctx.current_proxy_seed
     local my_seed = StatsGetValue("world_seed")
+    if proxy_seed ~= nil and my_seed ~= proxy_seed then
+        SetWorldSeed(proxy_seed)
+        SetRandomSeed(proxy_seed, 141)
+        my_seed = proxy_seed
+    end
+    if proxy_seed ~= nil then
+        seed = proxy_seed
+    end
 
     if not_fine then
         GamePrint("玩家：" .. ctx.rpc_player_data.name .. "，其游戏模式编号与你不同")
@@ -197,9 +206,10 @@ function module.on_world_update()
         rpc.player_update(input_data, pos_data, phys_info, current_slot, my_team)
         if GameGetFrameNum() % 300 == 53 then
             local n = np.GetGameModeNr()
+            local sync_seed = ctx.initial_proxy_seed or ctx.current_proxy_seed or StatsGetValue("world_seed")
             rpc.check_gamemode(
                 np.GetGameModeName(n),
-                StatsGetValue("world_seed"),
+                sync_seed,
                 ctx.proxy_opt.world_num,
                 GameHasFlagRun("ending_game_completed")
             )

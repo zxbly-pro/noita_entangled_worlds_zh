@@ -13,6 +13,10 @@ function net_handling.proxy.seed(_, value)
         seed = 1
     end
     if seed ~= nil then
+        if ctx.initial_proxy_seed == nil then
+            ctx.initial_proxy_seed = seed
+        end
+        ctx.current_proxy_seed = seed
         SetWorldSeed(seed)
         SetRandomSeed(seed, 141)
     end
