@@ -714,7 +714,8 @@ impl WorldManager {
                 *idx = data_remap[idx];
             }
         }
-        self.explosion_pointer.retain(|_, entries| !entries.is_empty());
+        self.explosion_pointer
+            .retain(|_, entries| !entries.is_empty());
         self.explosion_data = new_data;
         self.explosion_heap = new_heap;
     }
