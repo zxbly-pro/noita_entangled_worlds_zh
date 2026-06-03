@@ -303,8 +303,9 @@ function perk_fns.on_world_update()
             local n = perk_fns.get_my_perks()[perk_id] or 0
             if num > n then
                 local perk_info = get_perk_with_id(perk_list, perk_id)
+                local auto_pickup = ctx.proxy_opt.share_perks_auto_pickup ~= false
                 for _ = 1, num - n do
-                    spawn_perk(perk_info, true)
+                    spawn_perk(perk_info, auto_pickup)
                 end
             end
         end

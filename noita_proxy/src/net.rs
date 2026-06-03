@@ -1127,6 +1127,12 @@ impl NetManager {
             settings.share_all_perks.unwrap_or(def.share_all_perks),
         );
         state.try_ws_write_option(
+            "share_perks_auto_pickup",
+            settings
+                .share_perks_auto_pickup
+                .unwrap_or(def.share_perks_auto_pickup),
+        );
+        state.try_ws_write_option(
             "enemy_hp_scale",
             settings.enemy_hp_mult.unwrap_or(def.enemy_hp_mult),
         );

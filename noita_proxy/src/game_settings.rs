@@ -29,6 +29,7 @@ pub struct GameSettings {
     pub perk_ban_list: Option<String>,
     pub disabled_globals: Option<String>,
     pub share_all_perks: Option<bool>,
+    pub share_perks_auto_pickup: Option<bool>,
     pub spell_ban_list: Option<String>,
     pub physics_damage: Option<bool>,
     pub share_gold: Option<bool>,
@@ -63,6 +64,7 @@ pub struct DefaultSettings {
     pub perk_ban_list: String,
     pub disabled_globals: String,
     pub share_all_perks: bool,
+    pub share_perks_auto_pickup: bool,
     pub spell_ban_list: String,
     pub physics_damage: bool,
     pub share_gold: bool,
@@ -100,6 +102,7 @@ impl Default for DefaultSettings {
             perk_ban_list: String::new(),
             disabled_globals: String::new(),
             share_all_perks: false,
+            share_perks_auto_pickup: true,
             spell_ban_list: String::new(),
             physics_damage: true,
             share_gold: false,
@@ -536,6 +539,19 @@ impl GameSettings {
                 if ui.checkbox(&mut temp, "共享所有天赋").changed() {
                     game_settings.share_all_perks = Some(temp)
                 }
+            }
+            {
+                let mut temp = game_settings
+                    .share_perks_auto_pickup
+                    .unwrap_or(def.share_perks_auto_pickup);
+                ui.add_enabled_ui(
+                    game_settings.share_all_perks.unwrap_or(def.share_all_perks),
+                    |ui| {
+                        if ui.checkbox(&mut temp, "共享天赋自动拾取").changed() {
+                            game_settings.share_perks_auto_pickup = Some(temp)
+                        }
+                    },
+                );
             }
             {
                 let mut temp = game_settings
