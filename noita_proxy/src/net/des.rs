@@ -32,6 +32,10 @@ pub(crate) struct DesManager {
 }
 
 impl DesManager {
+    fn has_authority(&self, gid: Gid, source: OmniPeerId) -> bool {
+        self.authority.get(&gid).copied() == Some(source)
+    }
+
     pub(crate) fn new(is_host: bool, save_state: SaveState) -> Self {
         info!("Loading EntityStorage...");
         let entity_storage: EntityStorage = save_state.load().unwrap_or_default();
@@ -85,14 +89,20 @@ impl DesManager {
                     counter,
                     is_charmed,
                     hp,
+                    max_hp,
                     phys,
                     synced_var,
                 } = update;
+                if !self.has_authority(gid, source) {
+                    warn!("Ignoring entity update without authority: {source} {gid:?}");
+                    return;
+                }
                 self.remove_gid_from_tree(gid);
                 if let Some(entity) = self.entity_storage.entities.get_mut(&gid) {
                     entity.pos = pos;
                     entity.is_charmed = is_charmed;
                     entity.hp = hp;
+                    entity.max_hp = max_hp;
                     entity.counter = counter;
                     entity.phys = phys;
                     entity.synced_var = synced_var;

@@ -53,6 +53,25 @@ local function set_gold(gold)
     end
 end
 
+local function get_entity_children_by_name(entity)
+    local children = EntityGetAllChildren(entity) or {}
+    local by_name = {}
+    for _, child in ipairs(children) do
+        by_name[EntityGetName(child)] = child
+    end
+    return children, by_name
+end
+
+local function disable_hearty_end_on_children(entity)
+    for _, child in ipairs(EntityGetAllChildren(entity) or {}) do
+        for _, lua in ipairs(EntityGetComponentIncludingDisabled(child, "LuaComponent") or {}) do
+            if ComponentGetValue2(lua, "script_source_file") == "data/scripts/status_effects/hearty_end.lua" then
+                ComponentSetValue2(lua, "execute_on_removed", false)
+            end
+        end
+    end
+end
+
 rpc.opts_everywhere()
 function rpc.remove_homing(clear_area)
     local x, y
@@ -431,18 +450,13 @@ local function player_died()
     LoadGameEffectEntityTo(ctx.my_player.entity, "mods/quant.ew/files/system/spectate/no_tinker.xml")
     cos.set_cosmetics_locally(ctx.my_id)
 
+    local children, children_by_name = get_entity_children_by_name(ctx.my_player.entity)
     local inv = EntityGetFirstComponentIncludingDisabled(ctx.my_player.entity, "Inventory2Component")
     if inv ~= nil then
         ComponentSetValue2(inv, "mItemHolstered", false)
         ComponentSetValue2(inv, "mActualActiveItem", 0)
         ComponentSetValue2(inv, "mActiveItem", 0)
-        local quick
-        for _, child in ipairs(EntityGetAllChildren(ctx.my_player.entity) or {}) do
-            if EntityGetName(child) == "inventory_quick" then
-                quick = child
-                break
-            end
-        end
+        local quick = children_by_name.inventory_quick
         for _, child in ipairs(EntityGetAllChildren(quick) or {}) do
             EntitySetComponentsWithTagEnabled(child, "enabled_in_hand", false)
             EntitySetComponentsWithTagEnabled(child, "enabled_in_world", false)
@@ -454,8 +468,9 @@ local function player_died()
 
     remove_healthbar_locally()
     inventory_helper.set_item_data(item_data, ctx.my_player, true, false)
-    for _, child in ipairs(EntityGetAllChildren(ctx.my_player.entity) or {}) do
-        if EntityGetName(child) == "cursor" or EntityGetName(child) == "notcursor" then
+    for _, child in ipairs(children) do
+        local child_name = EntityGetName(child)
+        if child_name == "cursor" or child_name == "notcursor" then
             EntitySetComponentIsEnabled(
                 child,
                 EntityGetFirstComponentIncludingDisabled(child, "SpriteComponent"),
@@ -479,7 +494,8 @@ local function do_game_over(message)
     if not ctx.proxy_opt.perma_death then
         if not GameHasFlagRun("ending_game_completed") then
             for peer_id, data in pairs(ctx.players) do
-                if peer_id ~= ctx.my_id and #(EntityGetAllChildren(data.entity) or {}) ~= 0 then
+                local children = EntityGetAllChildren(data.entity) or {}
+                if peer_id ~= ctx.my_id and #children ~= 0 then
                     local x, y = EntityGetTransform(data.entity)
                     LoadRagdoll("mods/quant.ew/files/system/player/tmp/" .. peer_id .. "_ragdoll.txt", x, y)
                 end
@@ -488,7 +504,8 @@ local function do_game_over(message)
     end
     async(function()
         print("Performing do_game_over...")
-        if #(EntityGetAllChildren(ctx.my_player.entity) or {}) ~= 0 then
+        local my_children = EntityGetAllChildren(ctx.my_player.entity) or {}
+        if #my_children ~= 0 then
             local ent = end_poly_effect(ctx.my_player.entity)
             if ent ~= nil then
                 polymorph.switch_entity(ent)
@@ -769,7 +786,7 @@ ctx.cap.health = {
             remove_inventory()
             GameRemoveFlagRun("ew_flag_notplayer_active")
 
-            local player_entity = fake_unpolymorph()
+            fake_unpolymorph()
             rpc.remove_homing(true)
             remove_stuff()
             inventory_helper.set_item_data(item_data, ctx.my_player, true, false)
@@ -777,15 +794,7 @@ ctx.cap.health = {
             if controls ~= nil then
                 ComponentSetValue2(controls, "enabled", true)
             end
-            for _, child in ipairs(EntityGetAllChildren(ctx.my_player.entity) or {}) do
-                for _, lua in ipairs(EntityGetComponentIncludingDisabled(child, "LuaComponent") or {}) do
-                    if
-                        ComponentGetValue2(lua, "script_source_file") == "data/scripts/status_effects/hearty_end.lua"
-                    then
-                        ComponentSetValue2(lua, "execute_on_removed", false)
-                    end
-                end
-            end
+            disable_hearty_end_on_children(ctx.my_player.entity)
             if GameHasFlagRun("ew_kill_player") then
                 GameRemoveFlagRun("ew_kill_player")
                 polymorph.switch_entity(ctx.my_player.entity)

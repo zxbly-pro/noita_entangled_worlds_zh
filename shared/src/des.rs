@@ -53,6 +53,7 @@ pub struct UpdatePosition {
     pub counter: u8,
     pub is_charmed: bool,
     pub hp: f32,
+    pub max_hp: f32,
     pub phys: Vec<Option<PhysBodyInfo>>,
     pub synced_var: Vec<(String, String, i32, f32, bool)>,
 }

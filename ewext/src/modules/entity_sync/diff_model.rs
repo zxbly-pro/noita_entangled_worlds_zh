@@ -127,6 +127,7 @@ impl LocalDiffModel {
                             counter: current.counter,
                             is_charmed: current.is_charmed(),
                             hp: current.hp,
+                            max_hp: current.max_hp,
                             phys: current.phys.clone(),
                             synced_var: current.synced_var.clone(),
                         })
@@ -762,6 +763,7 @@ impl LocalDiffModelTracker {
                     counter: info.counter,
                     is_charmed: info.is_charmed(),
                     hp: info.hp,
+                    max_hp: info.max_hp,
                     phys: info.phys.clone(),
                     synced_var: info.synced_var.clone(),
                 })

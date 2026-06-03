@@ -224,7 +224,7 @@ impl WorldManager {
         debug!("My peer id: {my_peer_id:?}");
         thread::spawn(move || {
             let mut mats = Default::default();
-            let mut chunks = Vec::new();
+            let mut chunks: FxHashMap<ChunkCoord, ChunkData> = Default::default();
             let mut mats_open = true;
             let mut chunks_open = true;
             loop {
@@ -244,7 +244,7 @@ impl WorldManager {
                             if is_host {
                                 let _ = tsx.send((c, data.clone()));
                             }
-                            chunks.push((c, data));
+                            chunks.insert(c, data);
                         }
                         Err(TryRecvError::Empty) => break,
                         Err(TryRecvError::Disconnected) => {
@@ -254,7 +254,7 @@ impl WorldManager {
                     }
                 }
                 if !mats.is_empty() {
-                    for (c, data) in chunks.drain(..) {
+                    for (c, data) in chunks.drain() {
                         let _ = send.send((c, create_image(data, &mats)));
                     }
                 }
@@ -606,15 +606,20 @@ impl WorldManager {
         for (dst, msg) in emit_queue {
             self.emit_msg(dst, msg)
         }
+        let mut unloaded_chunks = Vec::new();
         self.chunk_state.retain(|chunk, state| {
             let retain = *state != ChunkState::UnloadPending;
             if !retain {
                 // Models are basically caches, no need to keep the chunk around in them.
                 self.inbound_model.forget_chunk(*chunk);
                 self.outbound_model.forget_chunk(*chunk);
+                unloaded_chunks.push(*chunk);
             }
             retain
         });
+        for chunk in unloaded_chunks {
+            self.prune_chunk_storage_entry(chunk);
+        }
         self.get_noita_updates()
     }
 
@@ -630,6 +635,9 @@ impl WorldManager {
         self.chunk_last_update.clear();
         self.chunk_state.clear();
         self.is_storage_recent.clear();
+        self.explosion_pointer.clear();
+        self.explosion_data.clear();
+        self.explosion_heap.clear();
     }
 
     pub(crate) fn get_emitted_msgs(&mut self) -> Vec<MessageRequest<WorldNetMessage>> {
@@ -652,6 +660,82 @@ impl WorldManager {
             dst,
             msg,
         })
+    }
+
+    fn prune_explosion_tracking(&mut self) {
+        let mut used_data = FxHashSet::default();
+        for entries in self.explosion_pointer.values() {
+            for &idx in entries {
+                if idx < self.explosion_data.len() {
+                    used_data.insert(idx);
+                }
+            }
+        }
+
+        if used_data.is_empty() {
+            self.explosion_pointer.clear();
+            self.explosion_data.clear();
+            self.explosion_heap.clear();
+            return;
+        }
+
+        let mut used_heap = FxHashSet::default();
+        for &data_idx in &used_data {
+            let heap_idx = self.explosion_data[data_idx].0;
+            if heap_idx < self.explosion_heap.len() {
+                used_heap.insert(heap_idx);
+            }
+        }
+
+        let mut heap_indices: Vec<usize> = used_heap.into_iter().collect();
+        heap_indices.sort_unstable();
+        let mut heap_remap = FxHashMap::default();
+        let mut new_heap = Vec::with_capacity(heap_indices.len());
+        for old_idx in heap_indices {
+            heap_remap.insert(old_idx, new_heap.len());
+            new_heap.push(self.explosion_heap[old_idx]);
+        }
+
+        let mut data_indices: Vec<usize> = used_data.into_iter().collect();
+        data_indices.sort_unstable();
+        let mut data_remap = FxHashMap::default();
+        let mut new_data = Vec::with_capacity(data_indices.len());
+        for old_idx in data_indices {
+            let (heap_idx, ray_idx, target, dist) = self.explosion_data[old_idx];
+            if let Some(&new_heap_idx) = heap_remap.get(&heap_idx) {
+                data_remap.insert(old_idx, new_data.len());
+                new_data.push((new_heap_idx, ray_idx, target, dist));
+            }
+        }
+
+        for entries in self.explosion_pointer.values_mut() {
+            entries.retain(|idx| data_remap.contains_key(idx));
+            for idx in entries.iter_mut() {
+                *idx = data_remap[idx];
+            }
+        }
+        self.explosion_pointer.retain(|_, entries| !entries.is_empty());
+        self.explosion_data = new_data;
+        self.explosion_heap = new_heap;
+    }
+
+    fn prune_chunk_storage_entry(&mut self, chunk: ChunkCoord) {
+        if self.is_host {
+            return;
+        }
+        if self.chunk_state.contains_key(&chunk) {
+            return;
+        }
+        if self.authority_map.contains_key(&chunk) {
+            return;
+        }
+        if self.explosion_pointer.contains_key(&chunk) {
+            return;
+        }
+        self.chunk_storage.remove(&chunk);
+        self.chunk_last_update.remove(&chunk);
+        self.last_request_priority.remove(&chunk);
+        self.is_storage_recent.remove(&chunk);
     }
 
     fn emit_got_authority(&mut self, chunk: ChunkCoord, source: OmniPeerId, priority: u8) {
@@ -1345,6 +1429,7 @@ impl WorldManager {
         }
         for c in to_remove {
             self.chunk_state.remove(&c);
+            self.prune_chunk_storage_entry(c);
         }
         if !self.is_host {
             return;
@@ -2210,6 +2295,7 @@ impl WorldManager {
                 self.explosion_data[i].2 = ExTarget::Radius(0)
             }
         }
+        self.prune_explosion_tracking();
     }
     #[allow(clippy::too_many_arguments)]
     #[allow(clippy::type_complexity)]

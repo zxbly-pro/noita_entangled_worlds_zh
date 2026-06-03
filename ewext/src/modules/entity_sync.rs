@@ -350,7 +350,23 @@ impl EntitySync {
                 return Ok(Some(peer));
             }
             shared::des::ProxyToDes::DeleteEntity(entity) => {
-                EntityID(entity).kill();
+                let entity = EntityID(entity);
+                let should_kill = if entity_is_item(entity)? {
+                    entity.root()?.is_some_and(|root| root != entity)
+                } else {
+                    true
+                };
+                if should_kill {
+                    #[cfg(debug_assertions)]
+                    println!("DES delete entity: kill local entity {:?}", entity);
+                    entity.kill();
+                } else {
+                    #[cfg(debug_assertions)]
+                    println!(
+                        "DES delete entity: skip local kill for dropped item {:?}",
+                        entity
+                    );
+                }
             }
         }
         Ok(None)

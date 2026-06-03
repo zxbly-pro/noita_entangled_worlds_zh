@@ -1,4 +1,4 @@
-## Noita Entangled Worlds v1.8.3
+## Noita Entangled Worlds v1.8.4
 
 - Expanded the wand showcase UI so it can display the full inventory instead of only the active wand.
 - Fixed stale remote entity-sync cleanup on world init and peer reset, reducing the chance of runaway update loops after starting a new game.

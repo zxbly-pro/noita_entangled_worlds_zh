@@ -208,13 +208,16 @@ function module.on_world_update()
 
     if GameGetFrameNum() % 32 == 7 then
         local mx, my = GameGetCameraPos()
+        local disable_cursors = ModSettingGet("quant.ew.disable_cursors")
         for peer_id, player in pairs(ctx.players) do
             local ent = player.entity
             local children = EntityGetAllChildren(ent) or {}
+            local cape
             if ctx.my_id ~= peer_id then
                 for _, child in ipairs(children) do
-                    if EntityGetName(child) == "cursor" then
-                        if ModSettingGet("quant.ew.disable_cursors") then
+                    local child_name = EntityGetName(child)
+                    if child_name == "cursor" then
+                        if disable_cursors then
                             local sprite = EntityGetFirstComponent(child, "SpriteComponent")
                             if sprite ~= nil and sprite ~= 0 then
                                 EntitySetComponentIsEnabled(child, sprite, false)
@@ -227,12 +230,40 @@ function module.on_world_update()
                             )
                         end
                     end
-                    if EntityGetName(child) == "notcursor" then
+                    if child_name == "notcursor" then
                         EntitySetComponentIsEnabled(
                             child,
                             EntityGetFirstComponentIncludingDisabled(child, "SpriteComponent"),
                             true
                         )
+                    end
+                    if child_name == "cape" then
+                        local cpe = EntityGetFirstComponentIncludingDisabled(child, "VerletPhysicsComponent")
+                        if cpe ~= nil then
+                            local cx, cy = ComponentGetValue2(cpe, "m_position_previous")
+                            local dcx, dcy = mx - cx, my - cy
+                            if dcx * dcx + dcy * dcy > 350 * 350 then
+                                EntityKill(child)
+                            else
+                                cape = child
+                            end
+                        end
+                    end
+                end
+            else
+                for _, child in ipairs(children) do
+                    if EntityGetName(child) == "cape" then
+                        local cpe = EntityGetFirstComponentIncludingDisabled(child, "VerletPhysicsComponent")
+                        if cpe ~= nil then
+                            local cx, cy = ComponentGetValue2(cpe, "m_position_previous")
+                            local dcx, dcy = mx - cx, my - cy
+                            if dcx * dcx + dcy * dcy > 350 * 350 then
+                                EntityKill(child)
+                            else
+                                cape = child
+                            end
+                        end
+                        break
                     end
                 end
             end
@@ -247,20 +278,6 @@ function module.on_world_update()
                 goto continue
             end
             local dx, dy = x - mx, y - my
-            local cape
-            for _, child in ipairs(children) do
-                if EntityGetName(child) == "cape" then
-                    local cpe = EntityGetFirstComponentIncludingDisabled(child, "VerletPhysicsComponent")
-                    local cx, cy = ComponentGetValue2(cpe, "m_position_previous")
-                    local dcx, dcy = mx - cx, my - cy
-                    if dcx * dcx + dcy * dcy > 350 * 350 then
-                        EntityKill(child)
-                    else
-                        cape = child
-                    end
-                    break
-                end
-            end
             local light = EntityGetFirstComponentIncludingDisabled(ent, "LightComponent")
             if dx * dx + dy * dy > 350 * 350 then
                 if cape ~= nil then

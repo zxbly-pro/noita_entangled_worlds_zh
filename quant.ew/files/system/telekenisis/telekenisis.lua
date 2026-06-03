@@ -20,61 +20,90 @@ end
 rpc.opts_reliable()
 function rpc.send_tele(body_gid, n, extent, aimangle, bodyangle, distance, mindistance)
     local com = EntityGetFirstComponent(ctx.rpc_player_data.entity, "TelekinesisComponent")
-    if com ~= nil then
-        local ent = ewext.find_by_gid(body_gid)
-        local x, y = EntityGetTransform(ent)
-        local cx, cy = GameGetCameraPos()
-        if x ~= nil then
-            local dx, dy = math.abs(x - cx), math.abs(y - cy)
-            if
-                ent ~= nil
-                and dx <= MagicNumbersGetValue("VIRTUAL_RESOLUTION_X") / 2
-                and dy <= MagicNumbersGetValue("VIRTUAL_RESOLUTION_Y") / 2
-            then
-                local body_id = PhysicsBodyIDGetFromEntity(ent)[n]
-                if body_id == nil then
-                    ComponentSetValue2(com, "mState", 0)
-                    return
-                end
-                if not table.contains(who_has_tele, ctx.rpc_peer_id) then
-                    table.insert(who_has_tele, ctx.rpc_peer_id)
-                    ComponentSetValue2(com, "mState", 1)
-                    if is_holding == ent then
-                        local mycom = EntityGetFirstComponent(ctx.my_player.entity, "TelekinesisComponent")
-                        if mycom ~= nil then
-                            ComponentSetValue2(mycom, "mInteract", true)
-                        end
-                        is_holding = nil
-                    end
-                end
-                ComponentSetValue(com, "mBodyID", body_id)
-                ComponentSetValue2(com, "mStartBodyMaxExtent", extent)
-                ComponentSetValue2(com, "mStartAimAngle", aimangle)
-                ComponentSetValue2(com, "mStartBodyAngle", bodyangle)
-                ComponentSetValue2(com, "mStartBodyDistance", distance)
-                ComponentSetValue2(com, "mMinBodyDistance", mindistance)
-            else
-                ComponentSetValue2(com, "mState", 0)
-            end
-        else
-            ComponentSetValue2(com, "mState", 0)
-        end
-    else
-        ComponentSetValue2(com, "mState", 0)
+    if com == nil then
+        return
     end
+
+    local ent = ewext.find_by_gid(body_gid)
+    if ent == nil or not EntityGetIsAlive(ent) then
+        ComponentSetValue2(com, "mState", 0)
+        return
+    end
+
+    local x, y = EntityGetTransform(ent)
+    local cx, cy = GameGetCameraPos()
+    if x == nil then
+        ComponentSetValue2(com, "mState", 0)
+        return
+    end
+
+    local dx, dy = math.abs(x - cx), math.abs(y - cy)
+    if
+        dx > MagicNumbersGetValue("VIRTUAL_RESOLUTION_X") / 2
+        or dy > MagicNumbersGetValue("VIRTUAL_RESOLUTION_Y") / 2
+    then
+        ComponentSetValue2(com, "mState", 0)
+        return
+    end
+
+    local body_ids = PhysicsBodyIDGetFromEntity(ent)
+    local body_id = body_ids ~= nil and body_ids[n] or nil
+    if body_id == nil then
+        ComponentSetValue2(com, "mState", 0)
+        return
+    end
+
+    if not table.contains(who_has_tele, ctx.rpc_peer_id) then
+        table.insert(who_has_tele, ctx.rpc_peer_id)
+        ComponentSetValue2(com, "mState", 1)
+        if is_holding == ent then
+            local mycom = EntityGetFirstComponent(ctx.my_player.entity, "TelekinesisComponent")
+            if mycom ~= nil then
+                ComponentSetValue2(mycom, "mInteract", true)
+            end
+            is_holding = nil
+        end
+    end
+
+    ComponentSetValue(com, "mBodyID", body_id)
+    ComponentSetValue2(com, "mStartBodyMaxExtent", extent)
+    ComponentSetValue2(com, "mStartAimAngle", aimangle)
+    ComponentSetValue2(com, "mStartBodyAngle", bodyangle)
+    ComponentSetValue2(com, "mStartBodyDistance", distance)
+    ComponentSetValue2(com, "mMinBodyDistance", mindistance)
 end
 
 local has_tele = false
 
 local ent_to_body = {}
+local body_to_ent_map = {}
 
-local function body_to_ent(id)
-    for ent, lst in pairs(ent_to_body) do
-        for i, bid in ipairs(lst) do
-            if bid == id then
-                return ent, i
+local function clear_ent_body(ent)
+    local bodies = ent_to_body[ent]
+    if bodies ~= nil then
+        for i, body_id in ipairs(bodies) do
+            if body_to_ent_map[body_id] ~= nil and body_to_ent_map[body_id][1] == ent then
+                body_to_ent_map[body_id] = nil
             end
         end
+    end
+    ent_to_body[ent] = nil
+end
+
+local function set_ent_body(ent, bodies)
+    clear_ent_body(ent)
+    if bodies ~= nil and #bodies ~= 0 then
+        ent_to_body[ent] = bodies
+        for i, body_id in ipairs(bodies) do
+            body_to_ent_map[body_id] = { ent, i }
+        end
+    end
+end
+
+local function body_to_ent(id)
+    local body_data = body_to_ent_map[id]
+    if body_data ~= nil then
+        return body_data[1], body_data[2]
     end
 end
 
@@ -95,7 +124,7 @@ function tele.on_world_update()
         if EntityGetIsAlive(ent) then
             local lst = PhysicsBodyIDGetFromEntity(ent)
             if lst ~= nil and #lst ~= 0 then
-                ent_to_body[ent] = lst
+                set_ent_body(ent, lst)
             end
         end
     end
@@ -117,12 +146,14 @@ function tele.on_world_update()
         n = n + 1
         if start_i <= n then
             if not EntityGetIsAlive(ent) then
-                ent_to_body[ent] = nil
+                clear_ent_body(ent)
                 sent_track_req[ent] = nil
             else
-                ent_to_body[ent] = PhysicsBodyIDGetFromEntity(ent)
-                if ent_to_body[ent] ~= nil and #ent_to_body[ent] == 0 then
-                    ent_to_body[ent] = nil
+                local bodies = PhysicsBodyIDGetFromEntity(ent)
+                if bodies ~= nil and #bodies ~= 0 then
+                    set_ent_body(ent, bodies)
+                else
+                    clear_ent_body(ent)
                     sent_track_req[ent] = nil
                 end
             end
