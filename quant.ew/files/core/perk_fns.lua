@@ -105,7 +105,7 @@ local function spawn_perk(perk_info, auto_pickup_entity)
     if x == nil then
         return
     end
-    local perk_entity = perk_spawn(x, y - 8, perk_info.id)
+    local perk_entity = perk_spawn(x, y - 8, perk_info.id, true)
     if auto_pickup_entity then
         perk_pickup(perk_entity, ctx.my_player.entity, nil, true, false)
     end

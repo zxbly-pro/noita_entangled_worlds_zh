@@ -138,6 +138,26 @@ local function set_camera_free(enable, entity, dont)
     end
 end
 
+local function restore_local_camera(entity)
+    if entity == nil or not EntityGetIsAlive(entity) then
+        return
+    end
+    local cam = EntityGetFirstComponentIncludingDisabled(entity, "PlatformShooterPlayerComponent")
+    if cam == nil then
+        cam = EntityAddComponent2(entity, "PlatformShooterPlayerComponent", {
+            center_camera_on_this_entity = true,
+            move_camera_with_aim = true,
+        })
+    end
+    if cam ~= nil then
+        EntitySetComponentIsEnabled(entity, cam, true)
+        ComponentSetValue2(cam, "center_camera_on_this_entity", true)
+        ComponentSetValue2(cam, "move_camera_with_aim", true)
+    end
+    GameSetCameraFree(false)
+    ctx.stop_cam = true
+end
+
 local function end_poly_effect(ent)
     local serialized
     for _, child in ipairs(EntityGetAllChildren(ent) or {}) do
@@ -166,7 +186,7 @@ local function end_poly_effect(ent)
     np.SetPlayerEntity(new_ent)
     async(function()
         wait(1)
-        GameSetCameraFree(false)
+        restore_local_camera(new_ent)
     end)
     EntityKill(ent)
     return new_ent
@@ -339,6 +359,7 @@ local function fake_polymorph_into_entity(entity_path)
     EntityKill(player_entity)
 
     ctx.my_player.entity = notplayer
+    restore_local_camera(notplayer)
 
     return notplayer
 end
@@ -355,6 +376,7 @@ function fake_unpolymorph()
 
     EntityKill(notplayer)
     ctx.my_player.entity = player_entity
+    restore_local_camera(player_entity)
 
     return player_entity
 end

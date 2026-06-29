@@ -544,14 +544,9 @@ impl GameSettings {
                 let mut temp = game_settings
                     .share_perks_auto_pickup
                     .unwrap_or(def.share_perks_auto_pickup);
-                ui.add_enabled_ui(
-                    game_settings.share_all_perks.unwrap_or(def.share_all_perks),
-                    |ui| {
-                        if ui.checkbox(&mut temp, "共享天赋自动拾取").changed() {
-                            game_settings.share_perks_auto_pickup = Some(temp)
-                        }
-                    },
-                );
+                if ui.checkbox(&mut temp, "共享天赋自动拾取").changed() {
+                    game_settings.share_perks_auto_pickup = Some(temp)
+                }
             }
             {
                 let mut temp = game_settings

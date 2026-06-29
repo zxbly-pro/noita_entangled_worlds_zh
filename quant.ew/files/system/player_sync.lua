@@ -168,7 +168,14 @@ local fps_last_update_time = 0
 local function update_fps()
     local current_frame = GameGetFrameNum()
     local current_time = GameGetRealWorldTimeSinceStarted()
-    local fps = (current_frame - fps_last_frame) / (current_time - fps_last_update_time)
+    local delta_time = current_time - fps_last_update_time
+    if fps_last_update_time == 0 or delta_time <= 0 then
+        ctx.my_player.fps = 60
+        fps_last_frame = current_frame
+        fps_last_update_time = current_time
+        return
+    end
+    local fps = (current_frame - fps_last_frame) / delta_time
     ctx.my_player.fps = math.min(60, math.floor(fps + 0.5))
     fps_last_frame = current_frame
     fps_last_update_time = current_time

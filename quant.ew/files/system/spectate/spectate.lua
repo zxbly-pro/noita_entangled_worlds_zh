@@ -143,6 +143,29 @@ local function set_camera_position(x, y)
     end
 end
 
+local function reset_camera_to_me()
+    local my_ent = ctx.my_player.entity
+    if my_ent == nil or not EntityGetIsAlive(my_ent) then
+        return
+    end
+    cam_target = ctx.my_player
+    camera_target = ctx.my_player
+    camera_player_id = ctx.my_id
+    set_camera_free(false)
+    local audio = EntityGetFirstComponent(my_ent, "AudioListenerComponent")
+    if audio == nil then
+        local audio_n = EntityAddComponent2(my_ent, "AudioListenerComponent")
+        ComponentSetValue2(audio_n, "z", -60)
+    end
+    local inv_me = EntityGetFirstComponent(my_ent, "InventoryGuiComponent")
+    if inv_me ~= nil then
+        ComponentSetValue2(inv_me, "mActive", false)
+    end
+    perks_ui(true)
+    redo = false
+    re_cam = false
+end
+
 local function target()
     if cam_target.entity == ctx.my_player.entity and not EntityHasTag(ctx.my_player.entity, "ew_notplayer") then
         perks_ui(true)
@@ -281,6 +304,7 @@ local function set_camera_pos()
             camera_player_id, camera_player = get_me()
             re_cam = true
             if camera_player == -1 or camera_player_id == -1 then
+                reset_camera_to_me()
                 return
             end
             set_camera_pos()
@@ -349,6 +373,7 @@ function spectate.on_world_update()
         last_len = number_of_players()
     end
     if camera_player == -1 then
+        reset_camera_to_me()
         return
     end
 
