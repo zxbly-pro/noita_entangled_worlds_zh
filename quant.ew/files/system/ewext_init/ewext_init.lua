@@ -11,6 +11,8 @@ local log = false
 
 local cache = false
 
+local ewext_update_blocked_until = 0
+
 -- Used in ewext
 EwextSerialize = util.serialize_entity
 EwextDeserialize = util.deserialize_entity
@@ -42,6 +44,17 @@ end
 
 function module.on_client_spawned(peer_id, player_data)
     ewext.register_player_entity(peer_id, player_data.entity)
+end
+
+local function rebind_registered_players()
+    if ctx.my_id ~= nil and ctx.my_player ~= nil and EntityGetIsAlive(ctx.my_player.entity) then
+        ewext.register_player_entity(ctx.my_id, ctx.my_player.entity)
+    end
+    for peer_id, player_data in pairs(ctx.players or {}) do
+        if player_data ~= nil and player_data.entity ~= nil and EntityGetIsAlive(player_data.entity) then
+            ewext.register_player_entity(peer_id, player_data.entity)
+        end
+    end
 end
 
 function module.on_local_player_spawn()
@@ -96,7 +109,21 @@ function module.on_world_update()
         oh_another_world_state(GameGetWorldStateEntity())
         initial_world_state_entity = GameGetWorldStateEntity()
     end
-    ewext.module_on_world_update(ModSettingGet("quant.ew.log_stutters"))
+    if ewext_update_blocked_until > GameGetFrameNum() then
+        return
+    end
+    local log_stutters = ModSettingGet("quant.ew.log_stutters")
+    local ok, err = pcall(ewext.module_on_world_update, log_stutters)
+    if not ok then
+        print("ewext 更新异常，正在重绑玩家实体：" .. tostring(err))
+        rebind_registered_players()
+        local retry_ok, retry_err = pcall(ewext.module_on_world_update, log_stutters)
+        if not retry_ok then
+            ewext_update_blocked_until = GameGetFrameNum() + 60 * 5
+            GamePrint("ewext 更新连续失败，已临时停用 5 秒以避免卡死")
+            print("ewext 重试后仍失败：" .. tostring(retry_err))
+        end
+    end
 end
 
 function module.on_new_entity(arr)

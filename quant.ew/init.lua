@@ -323,7 +323,9 @@ function OnProjectileFired(
         local body = EntityGetFirstComponentIncludingDisabled(projectile_id, "PhysicsBody2Component")
         local proj = EntityGetFirstComponentIncludingDisabled(projectile_id, "ProjectileComponent")
         local life = EntityGetFirstComponentIncludingDisabled(projectile_id, "LifetimeComponent")
-        if proj == nil or ComponentGetValue2(proj, "lifetime") > 4 or ComponentGetValue2(life, "lifetime") > 4 then
+        local proj_lifetime = proj ~= nil and ComponentGetValue2(proj, "lifetime") or nil
+        local life_lifetime = life ~= nil and ComponentGetValue2(life, "lifetime") or nil
+        if proj == nil or (proj_lifetime ~= nil and proj_lifetime > 4) or (life_lifetime ~= nil and life_lifetime > 4) then
             if EntityGetIsAlive(projectile_id) then
                 ewext.sync_projectile(projectile_id, shooter_player_data.peer_id, rng)
             end

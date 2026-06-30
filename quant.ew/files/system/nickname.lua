@@ -1,6 +1,7 @@
 local rpc = net.new_rpc_namespace()
 
 local nickname = {}
+local default_font = "mods/quant.ew/files/resource/font_pixel_runes.xml"
 
 function nickname.parse(font_filename)
     local id_width = {}
@@ -86,6 +87,9 @@ function nickname.add_label(player_entity, text, font_filename, scale, alpha, ox
     if alpha == nil then
         alpha = 0.5
     end
+    if font_filename == nil or font_filename == "" or font_filename == "data/fonts/font_pixel_white.xml" then
+        font_filename = default_font
+    end
     local font = nickname.parse(font_filename)
     local textwidth = nickname.calculate_textwidth(text, font)
     if ox == nil then
@@ -126,7 +130,7 @@ function nickname.on_client_spawned(peer_id, player_data)
     if player_data.name == "[Peer " .. peer_id .. "]" then
         rpc.send_name(ctx.proxy_opt.name, true)
     end
-    nickname.add_label(player_data.entity, player_data.name, "data/fonts/font_pixel_white.xml", 0.75)
+    nickname.add_label(player_data.entity, player_data.name, default_font, 0.75)
 end
 
 function nickname.on_should_send_updates()
@@ -141,7 +145,7 @@ rpc.opts_reliable()
 function rpc.send_name(name, pong)
     if name ~= nil then
         ctx.rpc_player_data.name = name
-        nickname.add_label(ctx.rpc_player_data.entity, name, "data/fonts/font_pixel_white.xml", 0.75)
+        nickname.add_label(ctx.rpc_player_data.entity, name, default_font, 0.75)
     end
     if pong and ctx.proxy_opt.name ~= nil then
         rpc.send_name(ctx.proxy_opt.name)
