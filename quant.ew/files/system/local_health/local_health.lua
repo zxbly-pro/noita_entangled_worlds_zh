@@ -231,7 +231,7 @@ function rpc.add_nickname_change_cursor()
     nickname.add_label(
         ctx.rpc_player_data.entity,
         ctx.rpc_player_data.name,
-        "mods/quant.ew/files/resource/font_pixel_runes.xml",
+        "data/fonts/font_pixel_white.xml",
         0.75,
         0.75
     )

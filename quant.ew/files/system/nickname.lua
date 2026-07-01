@@ -1,7 +1,7 @@
 local rpc = net.new_rpc_namespace()
 
 local nickname = {}
-local default_font = "mods/quant.ew/files/resource/font_pixel_runes.xml"
+local default_font = "data/fonts/font_pixel_white.xml"
 
 function nickname.parse(font_filename)
     local id_width = {}
@@ -87,7 +87,7 @@ function nickname.add_label(player_entity, text, font_filename, scale, alpha, ox
     if alpha == nil then
         alpha = 0.5
     end
-    if font_filename == nil or font_filename == "" or font_filename == "data/fonts/font_pixel_white.xml" then
+    if font_filename == nil or font_filename == "" then
         font_filename = default_font
     end
     local font = nickname.parse(font_filename)
