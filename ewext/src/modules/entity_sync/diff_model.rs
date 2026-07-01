@@ -1814,12 +1814,10 @@ impl RemoteDiffModel {
                 )?;
                 entity_manager.invalidate_current();
                 if !entity.is_alive() {
-                    return Ok(());
+                    return Ok(None);
                 }
-                if let Some(damage) =
-                    entity_manager.try_get_first_component::<DamageModelComponent>(
-                        ComponentTag::None,
-                    )
+                if let Some(damage) = entity_manager
+                    .try_get_first_component::<DamageModelComponent>(ComponentTag::None)
                 {
                     if old != 0.0 {
                         damage.object_set_value("damage_multipliers", "curse", old)?
@@ -1842,12 +1840,10 @@ impl RemoteDiffModel {
                 )?;
                 entity_manager.invalidate_current();
                 if !entity.is_alive() {
-                    return Ok(());
+                    return Ok(None);
                 }
-                if let Some(damage) =
-                    entity_manager.try_get_first_component::<DamageModelComponent>(
-                        ComponentTag::None,
-                    )
+                if let Some(damage) = entity_manager
+                    .try_get_first_component::<DamageModelComponent>(ComponentTag::None)
                 {
                     if old != 0.0 {
                         damage.object_set_value("damage_multipliers", "healing", old)?
@@ -2162,10 +2158,8 @@ impl RemoteDiffModel {
                     entity_manager.invalidate_current();
                 }
                 if wait_on_kill {
-                    if let Some(damage) =
-                        entity_manager.try_get_first_component::<DamageModelComponent>(
-                            ComponentTag::None,
-                        )
+                    if let Some(damage) = entity_manager
+                        .try_get_first_component::<DamageModelComponent>(ComponentTag::None)
                     {
                         damage.set_kill_now(true)?;
                     }
