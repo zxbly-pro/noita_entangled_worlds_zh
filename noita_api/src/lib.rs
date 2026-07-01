@@ -1443,6 +1443,14 @@ impl EntityManager {
     pub fn remove_current(&mut self) {
         self.has_ran = false;
     }
+    pub fn invalidate_current(&mut self) {
+        if self.use_cache {
+            return;
+        }
+        if self.has_ran {
+            self.current_data = EntityData::new(self.current_entity).unwrap_or_default();
+        }
+    }
     pub fn remove_ent(&mut self, ent: &EntityID) {
         if &self.current_entity == ent || self.use_cache {
             self.has_ran = false;

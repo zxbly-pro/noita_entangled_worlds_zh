@@ -255,6 +255,7 @@ impl EntitySync {
                                                 "kill sync",
                                                 responsible_entity,
                                             )?;
+                                            self.entity_manager.invalidate_current();
                                         }
                                     }
                                 }
@@ -847,6 +848,7 @@ impl Module for EntitySync {
                         "kill sync",
                         responsible_entity,
                     )?;
+                    self.entity_manager.invalidate_current();
                 }
             }
         }
