@@ -275,6 +275,7 @@ impl LocalDiffModelTracker {
             .entity_by_lid(lid)
             .wrap_err_with(|| eyre!("Failed to grab update info for {:?} {:?}", gid, lid))?;
         entity_manager.set_current_entity(entity)?;
+        refresh_dynamic_player_cache(entity, entity_manager);
 
         if !entity.is_alive() {
             if self.got_polied.remove(&gid) {
@@ -2014,6 +2015,7 @@ impl RemoteDiffModel {
             match self.tracked.get_by_left(lid) {
                 Some(entity) if entity.is_alive() => {
                     entity_manager.set_current_entity(*entity)?;
+                    refresh_dynamic_player_cache(*entity, entity_manager);
                     if tmr.elapsed().as_micros() > 5000 || start > i {
                         if end.is_none() && start <= i {
                             end = Some(i);
@@ -2117,6 +2119,7 @@ impl RemoteDiffModel {
                 continue;
             };
             entity_manager.set_current_entity(entity)?;
+            refresh_dynamic_player_cache(entity, entity_manager);
             if let Some(explosion) = entity_manager
                 .try_get_first_component::<ExplodeOnDamageComponent>(ComponentTag::None)
             {
@@ -2446,6 +2449,15 @@ fn item_in_inventory(entity: EntityID) -> Result<bool, eyre::Error> {
     Ok(entity.root()? != Some(entity))
 }
 
+fn refresh_dynamic_player_cache(entity: EntityID, entity_manager: &mut EntityManager) {
+    if entity.has_tag("ew_client")
+        || entity.has_tag("player_unit")
+        || entity.has_tag("polymorphed_player")
+    {
+        entity_manager.invalidate_current();
+    }
+}
+
 fn item_in_my_inventory(entity: EntityID) -> Result<bool, eyre::Error> {
     Ok(entity
         .root()?
@@ -2458,7 +2470,8 @@ fn item_in_my_inventory(entity: EntityID) -> Result<bool, eyre::Error> {
 fn item_in_entity_inventory(entity: EntityID) -> Result<bool, eyre::Error> {
     Ok(entity
         .root()?
-        .and_then(|e| e.get_var("ew_gid_lid").unwrap().value_bool().ok())
+        .and_then(|e| e.get_var("ew_gid_lid"))
+        .and_then(|var| var.value_bool().ok())
         .unwrap_or(false))
 }
 
