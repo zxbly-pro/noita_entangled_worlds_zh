@@ -517,14 +517,13 @@ impl EntitySync {
             return Ok(());
         }
         // It might be already tracked in case of tablet telekinesis, no need to track it again.
-        if !self.local_diff_model.is_entity_tracked(entity) {
-            if self
+        if !self.local_diff_model.is_entity_tracked(entity)
+            && self
                 .local_diff_model
                 .track_and_upload_entity(entity, &mut self.entity_manager)
                 .is_err()
-            {
-                return Ok(());
-            }
+        {
+            return Ok(());
         }
         Ok(())
     }
